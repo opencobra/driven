@@ -38,7 +38,7 @@ def tfba(model, objective=None, delta_gs=None, K=None, *args, **kwargs):
                 constraints.append([k_constraint, flux_constraint])
         with TimeMachine() as tm:
             tm(do=partial(setattr, model, 'objective', objective),
-               undo=partial(setattr, model, 'objective', model.objective))
+               undo=partial(setattr, model, 'objective', model.objective.expression))
             tm(do=partial(model.solver.add, variables),
                undo=partial(model.solver.remove, variables))
             tm(do=partial(model.solver.add, constraints),
