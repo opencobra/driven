@@ -12,28 +12,72 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import unittest
+import os
+import numpy as np
+from driven.data_sets.expression_profile import ExpressionProfile
+from driven.flux_analysis.metrics import gimme_inconsistency_score
+from driven.flux_analysis.transcriptomics import gimme, imat
+
+
+CURDIR = os.path.dirname(__file__)
 
 
 class TranscriptomicsTestCase(unittest.TestCase):
     def setUp(self):
-        pass
+        variables = {}
 
-    def test_gimme(model, objective=None, *args, **kwargs):
+        # Blazier et al toy model and mock expression set can be use to test GIMME, iMAT, MADE, E-flux and PROM
+        execfile(os.path.join(CURDIR, "assets", "blazier_et_al_2012.py"), variables)
+        self._blazier_et_al_model = variables["model"]
+        self._blazier_et_al_expression = variables["expression_profile"]
+
+        # Toy model from iMAT publication
+        execfile(os.path.join(CURDIR, "assets", "zur_et_al_2010.py"), variables)
+        self._zur_et_al_model = variables["model"]
+        self._zur_et_al_expression = variables["expression_profile"]
+
+    def test_gimme(self):
+        model = self._blazier_et_al_model
+        expression = self._blazier_et_al_expression.to_reaction_dict("Exp#1", model)
+        gimme_res_025 = gimme(model, expression, 0.25, fraction_of_optimum=0.5)
+        print(gimme_res_025.data_frame)
+        self.assertEqual(gimme_inconsistency_score(gimme_res_025, expression, 0.25), 0)
+        gimme_res_050 = gimme(model, expression, 0.50)
+        self.assertGreater(gimme_inconsistency_score(gimme_res_050, expression, 0.50), 0)
+
+    def test_imat(self):
+        model = self._blazier_et_al_model
+        expression = self._blazier_et_al_expression.to_reaction_dict("Exp#2", model)
+
+        imat_res_025_075 = imat(model, expression, low_cutoff=0.25, high_cutoff=0.75)
+        print imat_res_025_075.data_frame
+
+        self.assertTrue(all([imat_res_025_075[r] == 0 for r in ["R1", "R2"]]))
+        self.assertTrue(all([imat_res_025_075[r] != 0 for r in ["R3", "R4", "R5", "R6", "R7", "R8"]]))
+
+        imat_res_050_075 = imat(model, expression, low_cutoff=0.50, high_cutoff=0.75)
+        print imat_res_050_075.data_frame
+        self.assertTrue(all([imat_res_050_075[r] == 0 for r in ["R1", "R2", "R3", "R4"]]))
+        self.assertTrue(all([imat_res_050_075[r] != 0 for r in ["R5", "R6", "R8"]]))
+
+    @unittest.skip("Not implemented")
+    def test_made(self):
         raise NotImplementedError
 
-    def test_imat(model, objective=None, *args, **kwargs):
+    @unittest.skip("Not implemented")
+    def test_eflux(self):
         raise NotImplementedError
 
-    def test_made(model, objective=None, *args, **kwargs):
+    @unittest.skip("Not implemented")
+    def test_relatch(self):
         raise NotImplementedError
 
-    def test_eflux(model, objective=None, *args, **kwargs):
+    @unittest.skip("Not implemented")
+    def test_gx_fba(self):
         raise NotImplementedError
 
-    def test_relatch(model, objective=None, *args, **kwargs):
-        raise NotImplementedError
-
-    def test_gx_fba(model, objective=None, *args, **kwargs):
+    @unittest.skip("Not implemented")
+    def test_prom(self):
         raise NotImplementedError
 
 
@@ -51,3 +95,14 @@ class C13TestCase(unittest.TestCase):
 
     def test_fba(self):
         pass
+
+
+class ExpressionProfileTestCase(unittest.TestCase):
+    def test_difference(self):
+        genes = ["G1"]
+        conditions = ["T1", "T2", "T3", "T4"]
+        expression = np.zeros((1, 4))
+        expression[0] = [10, 11, 65, 109]
+        profile = ExpressionProfile(genes, conditions, expression)
+
+        self.assertEqual(profile.differences, {"G1": [0, 1, 1]})
