@@ -39,11 +39,11 @@ class TranscriptomicsTestCase(unittest.TestCase):
     def test_gimme(self):
         model = self._blazier_et_al_model
         expression = self._blazier_et_al_expression.to_reaction_dict("Exp#1", model)
-        gimme_res_025 = gimme(model, expression, 0.25, fraction_of_optimum=0.5)
+        gimme_res_025 = gimme(model, expression, 0.25, fraction_of_optimum=0.4)
         print(gimme_res_025.data_frame)
-        self.assertEqual(gimme_inconsistency_score(gimme_res_025, expression, 0.25), 0)
+        self.assertEqual(gimme_res_025.inconsistency_score, .0)
         gimme_res_050 = gimme(model, expression, 0.50)
-        self.assertGreater(gimme_inconsistency_score(gimme_res_050, expression, 0.50), 0)
+        self.assertGreater(gimme_res_050.inconsistency_score, .0)
 
     def test_imat(self):
         model = self._blazier_et_al_model

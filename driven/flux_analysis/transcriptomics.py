@@ -55,7 +55,7 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, fraction_
 
     for rid, coefficient in six.iteritems(coefficients):
         reaction = model.reactions.get_by_id(rid)
-        objective_terms.append(coefficient * (reaction.variable + reaction.reverse_variable))
+        objective_terms.append(coefficient * (reaction.forward_variable + reaction.reverse_variable))
 
     with TimeMachine() as tm:
         tm(do=partial(setattr, model, "objective", Add(*objective_terms)),

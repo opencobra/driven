@@ -15,6 +15,7 @@ from cameo.core.result import FluxDistributionResult
 from pandas import DataFrame
 import numpy as np
 
+
 class GimmeResult(FluxDistributionResult):
     def __init__(self, solution, fba_fluxes, expression_profile, cutoff, *args, **kwargs):
         super(GimmeResult, self).__init__(solution, *args, **kwargs)
@@ -28,11 +29,15 @@ class GimmeResult(FluxDistributionResult):
         data = np.zeros((8, 3))
         data[:, 0] = list(self._fluxes.values())
         data[:, 1] = list(self._fba_fluxes.values())
-        data[:, 2] = [self.inconsistency_score(r) for r in index]
+        data[:, 2] = [self.reaction_inconsistency_score(r) for r in index]
         return DataFrame(data, index=index, columns=["gimme_fluxes", "fba_fluxes", "inconsistency_scores"])
 
-    def inconsistency_score(self, reaction):
+    def reaction_inconsistency_score(self, reaction):
         if reaction in self.expression_profile:
-            return self._fluxes[reaction] * (self.cutoff - self.expression_profile[reaction])
+            return abs(self._fluxes[reaction]) * (self.cutoff - self.expression_profile[reaction])
         else:
             return 0
+
+    @property
+    def inconsistency_score(self):
+        return sum([self.reaction_inconsistency_score(reaction) for reaction in self.expression_profile])

@@ -16,8 +16,6 @@
 
 from __future__ import absolute_import, print_function
 
-import os
-import sys
 from setuptools import setup, find_packages
 requirements = [
     "cameo>=v0.2",
