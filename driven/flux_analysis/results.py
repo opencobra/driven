@@ -17,27 +17,28 @@ import numpy as np
 
 
 class GimmeResult(FluxDistributionResult):
-    def __init__(self, solution, fba_fluxes, expression_profile, cutoff, *args, **kwargs):
+    def __init__(self, solution, fba_fluxes, reaction_profile, cutoff, *args, **kwargs):
         super(GimmeResult, self).__init__(solution, *args, **kwargs)
         self._fba_fluxes = fba_fluxes
-        self.expression_profile = expression_profile
+        self.reaction_profile = reaction_profile
         self.cutoff = cutoff
 
     @property
     def data_frame(self):
         index = list(self.fluxes.keys())
-        data = np.zeros((8, 3))
+        data = np.zeros((8, 4))
         data[:, 0] = list(self._fluxes.values())
         data[:, 1] = list(self._fba_fluxes.values())
-        data[:, 2] = [self.reaction_inconsistency_score(r) for r in index]
-        return DataFrame(data, index=index, columns=["gimme_fluxes", "fba_fluxes", "inconsistency_scores"])
+        data[:, 2] = [self.reaction_profile.get(r, float("nan")) for r in self._fluxes.keys()]
+        data[:, 3] = [self.reaction_inconsistency_score(r) for r in index]
+        return DataFrame(data, index=index, columns=["gimme_fluxes", "fba_fluxes", "expression", "inconsistency_scores"])
 
     def reaction_inconsistency_score(self, reaction):
-        if reaction in self.expression_profile:
-            return abs(self._fluxes[reaction]) * (self.cutoff - self.expression_profile[reaction])
+        if reaction in self.reaction_profile:
+            return abs(self._fluxes[reaction]) * max(self.cutoff - self.reaction_profile[reaction], 0)
         else:
             return 0
 
     @property
     def inconsistency_score(self):
-        return sum([self.reaction_inconsistency_score(reaction) for reaction in self.expression_profile])
+        return sum([self.reaction_inconsistency_score(reaction) for reaction in self.reaction_profile])

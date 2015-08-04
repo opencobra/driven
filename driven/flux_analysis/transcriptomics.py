@@ -12,28 +12,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from functools import partial
+import numbers
 import traceback
-from cameo import fba
+from cameo import fba, flux_variability_analysis
 from cameo.core.result import FluxDistributionResult
+from cameo.core.solver_based_model import SolverBasedModel
+from cameo.flux_analysis.analysis import flux_variability_analysis as fva
 from cameo.util import TimeMachine
 import six
 
 from sympy import Add, RealNumber
+from driven.data_sets.expression_profile import ExpressionProfile
 from driven.flux_analysis.results import GimmeResult
 
 
-def gimme(model, expression_profile=None, cutoff=None, objective=None, fraction_of_optimum=0.9, *args, **kwargs):
+def gimme(model, expression_profile=None, cutoff=None, objective=None, fraction_of_optimum=0.9,
+          normalization=max, condition=None, *args, **kwargs):
+    """
+    Gene Inactivity Moderated by Metabolism and Expression (GIMME)
+
+    Parameters
+    ----------
+    model: SolverBased Model
+        A constraint based model
+    expression_profile: ExpressionProfile
+        An expression profile
+    cutoff: float
+
+    reference_objective: str or other cameo compatible objective
+        The Minimal Required Functionalities (MRF)
+    fraction_of_optimum: float
+        The fraction of the MRF
+    normalization: function
+        expression profile normalization function
+    condition: str, int or None
+        The condition from the expression profile. If None (defulat), the first condition on the profile will be used.
+    normalization: function
+        The normalization function to convert the gene expression profile into reaction expression profile (default: max)
+
+    Returns
+    -------
+    GimmeResult
+
     """
 
-    :param model: SolverBased Model
-    :param expression_profile: ExpressionProfile
-    :param cutoff: float
-    :param reference_objective: str or other cameo compatible objective
-    :param fraction_of_optimum
-    :param args:
-    :param kwargs:
-    :return:
-    """
+    assert isinstance(model, SolverBasedModel)
+    assert isinstance(expression_profile, ExpressionProfile)
+    assert isinstance(fraction_of_optimum, numbers.Number)
+    assert isinstance(cutoff, float)
 
     if objective is None:
         objective = model.objective
@@ -50,46 +76,74 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, fraction_
                                                                name="required metabolic functionalities")
     objective_terms = list()
 
-    coefficients = {rid: 0 if expression <= cutoff else cutoff - expression
-                    for rid, expression in six.iteritems(expression_profile)}
+    condition = expression_profile.conditions[0] if condition is None else condition
+
+    reaction_profile = expression_profile.to_reaction_dict(condition, model, normalization)
+    coefficients = {r: cutoff - exp if cutoff > exp else 0 for r, exp in six.iteritems(reaction_profile)}
 
     for rid, coefficient in six.iteritems(coefficients):
         reaction = model.reactions.get_by_id(rid)
         objective_terms.append(coefficient * (reaction.forward_variable + reaction.reverse_variable))
 
     with TimeMachine() as tm:
-        tm(do=partial(setattr, model, "objective", Add(*objective_terms)),
+        gimme_objective = model.solver.interface.Objective(Add(*objective_terms), direction="min")
+        print(gimme_objective)
+        tm(do=partial(setattr, model, "objective", gimme_objective),
            undo=partial(setattr, model, "objective", model.objective.expression))
         tm(do=partial(model.solver._add_constraint, fix_obj_constraint),
            undo=partial(model.solver._remove_constraints, [fix_obj_constraint]))
 
-        return GimmeResult(model.solve(), fba_result.fluxes, expression_profile, cutoff)
+        return GimmeResult(model.solve(), fba_result.fluxes, reaction_profile, cutoff)
 
 
-def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsilon=0.001, *args, **kwargs):
+def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsilon=0.1, condition=None,
+         normalization=max, fraction_of_optimum=0.99, *args, **kwargs):
+    """
+    Integrative Metabolic Analysis Tool
+
+    Parameters
+    ----------
+    model: SolverBasedModel
+        A constraint-based model
+    expression_profile: ExpressionProfile
+        The expression profile
+    low_cutoff: number
+    high_cutoff: number
+    epsilon: float
+    """
+
+    assert isinstance(model, SolverBasedModel)
+    assert isinstance(expression_profile, ExpressionProfile)
+    assert isinstance(high_cutoff, numbers.Number)
+    assert isinstance(low_cutoff, numbers.Number)
+
+    condition = expression_profile.conditions[0] if condition is None else condition
+
+    reaction_profile = expression_profile.to_reaction_dict(condition, model, normalization)
+
     y_variables = list()
     x_variables = list()
     constraints = list()
     try:
-        for rid, expression in six.iteritems(expression_profile):
+        for rid, expression in six.iteritems(reaction_profile):
+            fva_res = fva(model, reactions=[rid], fraction_of_optimum=fraction_of_optimum)
             if expression > high_cutoff:
-                print "Highly %s" % rid
                 reaction = model.reactions.get_by_id(rid)
-                y_pos = model.solver.interface.Variable("y_%s_pos" % rid, type="binary")
-                y_neg = model.solver.interface.Variable("y_%s_neg" % rid, type="binary")
+                y_pos = model.solver.interface.Variable("y_%s+" % rid, type="binary")
+                y_neg = model.solver.interface.Variable("y_%s-" % rid, type="binary")
 
                 y_variables.append([y_neg, y_pos])
 
                 pos_constraint = model.solver.interface.Constraint(
-                    reaction.flux_expression + y_pos * (reaction.lower_bound - epsilon),
-                    lb=reaction.lower_bound,
-                    name="pos_highly_expressed_constraint_%s" % rid)
-
+                    reaction.flux_expression + y_pos * (fva_res["lower_bound"][rid] - epsilon),
+                    lb=fva_res["lower_bound"][rid],
+                    name="pos_highly_%s" % rid)
+                print(pos_constraint)
                 neg_constraint = model.solver.interface.Constraint(
-                    reaction.flux_expression + y_neg * (reaction.upper_bound + epsilon),
-                    ub=reaction.upper_bound,
-                    name="neg_highly_expressed_constraint_%s" % rid)
-
+                    reaction.flux_expression + y_neg * (fva_res["upper_bound"][rid] + epsilon),
+                    ub=fva_res["upper_bound"][rid],
+                    name="neg_highly_%s" % rid)
+                print(neg_constraint)
                 constraints.extend([pos_constraint, neg_constraint])
 
             if expression < low_cutoff:
@@ -100,12 +154,12 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
                 pos_constraint = model.solver.interface.Constraint(
                     reaction.flux_expression - (1 - x) * reaction.upper_bound,
                     ub=0,
-                    name="x_%s_upper_limit" % rid)
+                    name="x_%s_upper" % rid)
 
                 neg_constraint = model.solver.interface.Constraint(
                     reaction.flux_expression - (1 - x) * RealNumber(reaction.lower_bound),
                     lb=0,
-                    name="x_%s_lower_limit" % rid)
+                    name="x_%s_lower" % rid)
 
                 constraints.extend([pos_constraint, neg_constraint])
 
@@ -119,15 +173,14 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
         for constraint in constraints:
             model.solver._add_constraint(constraint)
 
-        objective = model.solver.interface.Objective(
-            Add(Add(*[v[0] + v[1] for v in y_variables]), Add(*x_variables)),
-            direction="max"
-        )
+        objective = model.solver.interface.Objective(Add(*[(v[0] + v[1]) for v in y_variables]) + Add(*x_variables),
+                                                     direction="max")
 
         with TimeMachine() as tm:
             tm(do=partial(setattr, model, "objective", objective),
                undo=partial(setattr, model, "objective", model.objective))
             return FluxDistributionResult(model.solve())
+
     except:
         traceback.print_exc()
 
