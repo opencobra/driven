@@ -7,14 +7,14 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an "AS IS" BASIS,wor
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from functools import partial
 import numbers
 import traceback
-from cameo import fba, flux_variability_analysis
+from cameo import fba
 from cameo.core.result import FluxDistributionResult
 from cameo.core.solver_based_model import SolverBasedModel
 from cameo.flux_analysis.analysis import flux_variability_analysis as fva
@@ -23,11 +23,12 @@ import six
 
 from sympy import Add, RealNumber
 from driven.data_sets.expression_profile import ExpressionProfile
+from driven.data_sets.normalization_functions import or2min_and2max
 from driven.flux_analysis.results import GimmeResult
 
 
 def gimme(model, expression_profile=None, cutoff=None, objective=None, fraction_of_optimum=0.9,
-          normalization=max, condition=None, *args, **kwargs):
+          normalization=or2min_and2max, condition=None, *args, **kwargs):
     """
     Gene Inactivity Moderated by Metabolism and Expression (GIMME)
 
@@ -138,12 +139,12 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
                     reaction.flux_expression + y_pos * (fva_res["lower_bound"][rid] - epsilon),
                     lb=fva_res["lower_bound"][rid],
                     name="pos_highly_%s" % rid)
-                print(pos_constraint)
+
                 neg_constraint = model.solver.interface.Constraint(
                     reaction.flux_expression + y_neg * (fva_res["upper_bound"][rid] + epsilon),
                     ub=fva_res["upper_bound"][rid],
                     name="neg_highly_%s" % rid)
-                print(neg_constraint)
+
                 constraints.extend([pos_constraint, neg_constraint])
 
             if expression < low_cutoff:

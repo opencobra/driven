@@ -14,6 +14,7 @@
 
 from numpy import ndarray
 import six
+from driven.data_sets.normalization_functions import or2min_and2max
 
 
 class ExpressionProfile(object):
@@ -28,23 +29,12 @@ class ExpressionProfile(object):
         self._gene_index = dict((g, i) for i, g in enumerate(genes))
         self.expression = expression
 
-    def split(self, thresholds=[]):
-        pass
-
     def to_dict(self, condition):
         return dict(zip(self.genes, self.expression[:, self._condition_index[condition]]))
 
-    def to_reaction_dict(self, condition, model, normalization=max):
-        reaction_expression = {}
-        for g in self.genes:
-            gene = model.genes.get_by_id(g)
-            expression = self.expression[self._gene_index[g], self._condition_index[condition]]
-            for reaction in gene.reactions:
-                if reaction.id not in reaction_expression:
-                    reaction_expression[reaction.id] = []
-                reaction_expression[reaction.id].append(expression)
-
-        return {rid: normalization(exp) for rid, exp in six.iteritems(reaction_expression)}
+    def to_reaction_dict(self, condition, model, normalization=or2min_and2max):
+        return {r.id: normalization(r, self.to_dict(condition)) for r in model.reactions
+                if len(r.genes) > 0 and any([g.id in self.genes for g in r.genes])}
 
     def __getitem__(self, item):
         if not isinstance(item, tuple):
