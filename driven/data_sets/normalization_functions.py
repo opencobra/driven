@@ -26,8 +26,5 @@ def or2min_and2max(reaction, gene_expression):
     rule = reaction.gene_reaction_rule.replace("and", "+").replace("or", "*")
     expression = parse_expr(rule, local_dict)
     expression = expression.replace(Mul, Max).replace(Add, Min)
-
-    print expression
-    print gene_expression
     return expression.evalf(subs=gene_expression)
 

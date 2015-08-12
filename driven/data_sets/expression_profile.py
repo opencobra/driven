@@ -18,7 +18,7 @@ from driven.data_sets.normalization_functions import or2min_and2max
 
 
 class ExpressionProfile(object):
-    def __init__(self, genes, conditions, expression):
+    def __init__(self, genes, conditions, expression, pvalues=None):
         assert isinstance(genes, list)
         assert isinstance(conditions, list)
         assert isinstance(expression, ndarray)
@@ -28,6 +28,7 @@ class ExpressionProfile(object):
         self.genes = genes
         self._gene_index = dict((g, i) for i, g in enumerate(genes))
         self.expression = expression
+        self.pvalues = pvalues
 
     def to_dict(self, condition):
         return dict(zip(self.genes, self.expression[:, self._condition_index[condition]]))

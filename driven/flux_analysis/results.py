@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from cameo.core.result import FluxDistributionResult
+from cameo.flux_analysis.simulation import FluxDistributionResult
 from pandas import DataFrame
 import numpy as np
 
@@ -26,7 +26,7 @@ class GimmeResult(FluxDistributionResult):
     @property
     def data_frame(self):
         index = list(self.fluxes.keys())
-        data = np.zeros((8, 4))
+        data = np.zeros((len(self._fluxes.keys()), 4))
         data[:, 0] = list(self._fluxes.values())
         data[:, 1] = list(self._fba_fluxes.values())
         data[:, 2] = [self.reaction_profile.get(r, float("nan")) for r in self._fluxes.keys()]

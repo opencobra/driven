@@ -15,7 +15,7 @@ from functools import partial
 import numbers
 import traceback
 from cameo import fba
-from cameo.core.result import FluxDistributionResult
+from cameo.flux_analysis.simulation import FluxDistributionResult
 from cameo.core.solver_based_model import SolverBasedModel
 from cameo.flux_analysis.analysis import flux_variability_analysis as fva
 from cameo.util import TimeMachine
@@ -88,7 +88,6 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, fraction_
 
     with TimeMachine() as tm:
         gimme_objective = model.solver.interface.Objective(Add(*objective_terms), direction="min")
-        print(gimme_objective)
         tm(do=partial(setattr, model, "objective", gimme_objective),
            undo=partial(setattr, model, "objective", model.objective.expression))
         tm(do=partial(model.solver._add_constraint, fix_obj_constraint),
