@@ -34,8 +34,14 @@ class ExpressionProfile(object):
         return dict(zip(self.genes, self.expression[:, self._condition_index[condition]]))
 
     def to_reaction_dict(self, condition, model, normalization=or2min_and2max):
-        return {r.id: normalization(r, self.to_dict(condition)) for r in model.reactions
-                if len(r.genes) > 0 and any([g.id in self.genes for g in r.genes])}
+        gene_exp = self.to_dict(condition)
+        reaction_exp = {}
+        for r in model.reactions:
+            reaction_genes = r.genes
+            if len(reaction_genes) > 0 and any([g.id in self.genes for g in reaction_genes]):
+                reaction_exp[r.id] = normalization(r, {g.id: gene_exp.get(g.id, 0) for g in reaction_genes})
+
+        return reaction_exp
 
     def __getitem__(self, item):
         if not isinstance(item, tuple):

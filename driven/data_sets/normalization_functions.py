@@ -12,19 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from cobra import Reaction
-from sympy import Symbol, Add, Mul
-from sympy.parsing.ast_parser import parse_expr
+from sympy import Add, Mul
 from sympy.functions.elementary.miscellaneous import Max, Min
 
 
 def or2min_and2max(reaction, gene_expression):
     assert isinstance(reaction, Reaction)
     assert isinstance(gene_expression, dict)
-
-    local_dict = {g.id: Symbol(g.id) for g in reaction.genes}
-    gene_expression = {gid: gene_expression.get(gid, 0) for gid in local_dict.keys()}
-    rule = reaction.gene_reaction_rule.replace("and", "+").replace("or", "*")
-    expression = parse_expr(rule, local_dict)
+    expression = reaction.gene_expression()
     expression = expression.replace(Mul, Max).replace(Add, Min)
     return expression.evalf(subs=gene_expression)
 
