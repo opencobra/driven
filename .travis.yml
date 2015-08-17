@@ -1,0 +1,36 @@
+language: python
+sudo: false
+python:
+- '2.7'
+- '3.4'
+cache:
+- pip: true
+services:
+- redis-server
+addons:
+  apt:
+    packages:
+    - swig
+    - libzmq3-dev
+    - libgmp-dev
+    - libglp
+    - libglpk-dev
+    - glpk-utils
+    - pandoc
+    - openbabel
+before_install:
+- pip install pip --upgrade
+install:
+- if [[ $TRAVIS_PYTHON_VERSION == "3.4" ]]; then pip install pyzmq pandas; fi
+- pip install python-libsbml-experimental numpy scipy pyzmq pandas -f http://nikosonnensche.in/wheels/index.html --trusted-host nikosonnensche.in
+  --no-index
+- pip install coveralls coverage
+- pip install pypandoc
+- pip install redis
+- pip install rednose
+- pip install cython>=0.21
+- pip install cobra==0.4.0b1 --pre
+- pip install .
+script: nosetests
+after_success:
+- coveralls

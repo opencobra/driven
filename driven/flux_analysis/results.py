@@ -11,7 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from IPython.core.display import display
+
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            from IPython.html.widgets import Dropdown
+    except ImportError:
+        from ipywidgets import Dropdown
+
+
 from cameo.flux_analysis.simulation import FluxDistributionResult
+from cameo.visualization.escher_ext import NotebookBuilder
 from pandas import DataFrame
 import numpy as np
 import six
@@ -57,3 +71,50 @@ class GimmeResult(ExpressionBasedResult):
         for r_id, flux in six.iteritems(self.fluxes):
             if abs(flux) == 0 and self.expression.get(r_id, self.cutoff+1) < self.cutoff:
                 model.reactions.get_by_id(r_id).knock_out(tm)
+
+    def display_on_map(self, map_name=None):
+        scales = {
+            "gimme_fluxes":         [dict(type='min', color="red", size=20),
+                                     dict(type='median', color="grey", size=7),
+                                     dict(type='max', color='green', size=20)],
+            "expression":           [dict(type='min', color="blue", size=10),
+                                     dict(type='max', color='green', size=20)],
+            "inconsistency_scores": [dict(type='min', color="blue", size=10),
+                                     dict(type='max', color='green', size=20)]
+        }
+
+        viewer = _MapViewer(self.data_frame, map_name, scales)
+        drop_down = Dropdown()
+        drop_down.options = {
+            "Fluxes": "gimme_fluxes",
+            "Expression": "expression",
+            "Inconsistency Score": "inconsistency_scores"
+        }
+        drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
+        display(drop_down)
+        viewer("gimme_fluxes")
+
+
+class _MapViewer(object):
+    def __init__(self, data_frame, map_name, scales):
+        self.data_frame = data_frame
+        self.map_name = map_name
+        self.builder = None
+        self.scales = scales
+
+    def __call__(self, column):
+        reaction_data = dict(self.data_frame[column])
+        reaction_scale = self.scales[column]
+        if self.builder is None:
+            self._init_builder(reaction_data, reaction_scale)
+        else:
+            self.builder.update(reaction_data=reaction_data, reaction_scale=reaction_scale)
+
+    def _init_builder(self, reaction_data, reaction_scale):
+        self.builder = NotebookBuilder(map_name=self.map_name,
+                                       reaction_data=reaction_data,
+                                       reaction_scale=reaction_scale)
+        display(self.builder.display_in_notebook())
+
+
+
