@@ -23,7 +23,7 @@ import six
 
 from sympy import Add, RealNumber
 from driven.data_sets.expression_profile import ExpressionProfile
-from driven.data_sets.normalization_functions import or2min_and2max
+from driven.data_sets.normalization import or2min_and2max
 from driven.flux_analysis.results import GimmeResult
 
 
