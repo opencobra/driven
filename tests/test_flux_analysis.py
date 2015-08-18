@@ -13,12 +13,9 @@
 # limitations under the License.
 import unittest
 import os
-import numpy as np
-from driven.data_sets.expression_profile import ExpressionProfile
 from driven.flux_analysis.transcriptomics import gimme, imat
 
-
-CURDIR = os.path.dirname(__file__)
+CUR_DIR = os.path.dirname(__file__)
 
 
 class TranscriptomicsTestCase(unittest.TestCase):
@@ -26,12 +23,12 @@ class TranscriptomicsTestCase(unittest.TestCase):
         variables = {}
 
         # Blazier et al toy model and mock expression set can be use to test GIMME, iMAT, MADE, E-flux and PROM
-        execfile(os.path.join(CURDIR, "assets", "blazier_et_al_2012.py"), variables)
+        execfile(os.path.join(CUR_DIR, "assets", "blazier_et_al_2012.py"), variables)
         self._blazier_model = variables["model"]
         self._blazier_expression = variables["expression_profile"]
 
         # Toy model from iMAT publication
-        execfile(os.path.join(CURDIR, "assets", "zur_et_al_2010.py"), variables)
+        execfile(os.path.join(CUR_DIR, "assets", "zur_et_al_2010.py"), variables)
         self._zur_et_al_model = variables["model"]
         self._zur_et_al_expression = variables["expression_profile"]
 
@@ -48,14 +45,14 @@ class TranscriptomicsTestCase(unittest.TestCase):
 
     def test_imat(self):
         model = self._blazier_model
+
         imat_res_025_075 = imat(model, self._blazier_expression, low_cutoff=0.25, high_cutoff=0.75, condition="Exp#2")
-        print imat_res_025_075.data_frame
 
         self.assertTrue(all([imat_res_025_075[r] == 0 for r in ["R1", "R2"]]))
         self.assertTrue(all([imat_res_025_075[r] != 0 for r in ["R3", "R4", "R5", "R6", "R7", "R8"]]))
 
         imat_res_050_075 = imat(model, self._blazier_expression, low_cutoff=0.50, high_cutoff=0.75, condition="Exp#2")
-        print imat_res_050_075.data_frame
+
         self.assertTrue(all([imat_res_050_075[r] == 0 for r in ["R1", "R2", "R3", "R4"]]))
         self.assertTrue(all([imat_res_050_075[r] != 0 for r in ["R5", "R6", "R8"]]))
 
@@ -96,12 +93,3 @@ class C13TestCase(unittest.TestCase):
         pass
 
 
-class ExpressionProfileTestCase(unittest.TestCase):
-    def test_difference(self):
-        genes = ["G1"]
-        conditions = ["T1", "T2", "T3", "T4"]
-        expression = np.zeros((1, 4))
-        expression[0] = [10, 11, 65, 109]
-        profile = ExpressionProfile(genes, conditions, expression)
-
-        self.assertEqual(profile.differences, {"G1": [0, 1, 1]})
