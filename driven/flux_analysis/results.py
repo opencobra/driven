@@ -15,6 +15,7 @@ from IPython.core.display import display
 
 import warnings
 from driven.generic.normalization import log_plus_one
+from driven.vizualization.escher_viewer import EscherViewer
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -27,7 +28,6 @@ with warnings.catch_warnings():
 
 
 from cameo.flux_analysis.simulation import FluxDistributionResult
-from cameo.visualization.escher_ext import NotebookBuilder
 from pandas import DataFrame
 import numpy as np
 import six
@@ -92,7 +92,7 @@ class GimmeResult(ExpressionBasedResult):
             "inconsistency_scores": log_plus_one
         }
 
-        viewer = _MapViewer(self.data_frame, map_name, color_scales, normalization_functions)
+        viewer = EscherViewer(self.data_frame, map_name, color_scales, normalization_functions)
         drop_down = Dropdown()
         drop_down.options = {
             "Fluxes": "gimme_fluxes",
@@ -102,29 +102,3 @@ class GimmeResult(ExpressionBasedResult):
         drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
         display(drop_down)
         viewer("gimme_fluxes")
-
-
-class _MapViewer(object):
-    def __init__(self, data_frame, map_name, color_scales, normalization_functions):
-        self.data_frame = data_frame
-        self.map_name = map_name
-        self.builder = None
-        self.color_scales = color_scales
-        self.normalization_functions = normalization_functions
-
-    def __call__(self, column):
-        reaction_data = dict(self.data_frame[column].apply(self.normalization_functions[column]))
-        reaction_scale = self.color_scales[column]
-        if self.builder is None:
-            self._init_builder(reaction_data, reaction_scale)
-        else:
-            self.builder.update(reaction_data=reaction_data, reaction_scale=reaction_scale)
-
-    def _init_builder(self, reaction_data, reaction_scale):
-        self.builder = NotebookBuilder(map_name=self.map_name,
-                                       reaction_data=reaction_data,
-                                       reaction_scale=reaction_scale)
-        display(self.builder.display_in_notebook())
-
-
-

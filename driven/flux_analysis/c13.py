@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from functools import partial
-from cameo import fba
+from cameo import pfba
 from cameo.util import TimeMachine
 
 
-def limited_fba(model, objective=None, distribution=None, *args, **kwargs):
+def fba(model, objective=None, distribution=None, *args, **kwargs):
     with TimeMachine() as tm:
         for reaction_id in distribution:
             reaction = model.reactions.get_by_id(reaction_id)
@@ -24,4 +24,4 @@ def limited_fba(model, objective=None, distribution=None, *args, **kwargs):
                undo=partial(setattr, reaction, "upper_bound", reaction.upper_bound))
             tm(do=partial(setattr, reaction, "lower_bound", distribution[reaction_id][0]),
                undo=partial(setattr, reaction, "lower_bound", reaction.lower_bound))
-        return fba(model, objective, *args, **kwargs)
+        return pfba(model, objective, *args, **kwargs)
