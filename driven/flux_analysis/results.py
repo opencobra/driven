@@ -14,6 +14,8 @@
 from IPython.core.display import display
 
 import warnings
+from driven.generic.normalization import log_plus_one
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     try:
@@ -73,17 +75,24 @@ class GimmeResult(ExpressionBasedResult):
                 model.reactions.get_by_id(r_id).knock_out(tm)
 
     def display_on_map(self, map_name=None):
-        scales = {
+        color_scales = {
             "gimme_fluxes":         [dict(type='min', color="red", size=20),
-                                     dict(type='median', color="grey", size=7),
+                                     dict(type='value', value=0, color="blue", size=7),
                                      dict(type='max', color='green', size=20)],
-            "expression":           [dict(type='min', color="blue", size=10),
-                                     dict(type='max', color='green', size=20)],
-            "inconsistency_scores": [dict(type='min', color="blue", size=10),
+            "expression":           [dict(type='value', value=log_plus_one(self.cutoff), color="blue", size=10),
+                                     dict(type='max', color='green', size=20),
+                                     dict(type='min', color='red', size=5)],
+            "inconsistency_scores": [dict(type='value', value=0, color="blue", size=10),
                                      dict(type='max', color='green', size=20)]
         }
 
-        viewer = _MapViewer(self.data_frame, map_name, scales)
+        normalization_functions = {
+            "gimme_fluxes": log_plus_one,
+            "expression": log_plus_one,
+            "inconsistency_scores": log_plus_one
+        }
+
+        viewer = _MapViewer(self.data_frame, map_name, color_scales, normalization_functions)
         drop_down = Dropdown()
         drop_down.options = {
             "Fluxes": "gimme_fluxes",
@@ -96,15 +105,16 @@ class GimmeResult(ExpressionBasedResult):
 
 
 class _MapViewer(object):
-    def __init__(self, data_frame, map_name, scales):
+    def __init__(self, data_frame, map_name, color_scales, normalization_functions):
         self.data_frame = data_frame
         self.map_name = map_name
         self.builder = None
-        self.scales = scales
+        self.color_scales = color_scales
+        self.normalization_functions = normalization_functions
 
     def __call__(self, column):
-        reaction_data = dict(self.data_frame[column])
-        reaction_scale = self.scales[column]
+        reaction_data = dict(self.data_frame[column].apply(self.normalization_functions[column]))
+        reaction_scale = self.color_scales[column]
         if self.builder is None:
             self._init_builder(reaction_data, reaction_scale)
         else:
