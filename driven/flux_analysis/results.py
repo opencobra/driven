@@ -13,11 +13,12 @@
 # limitations under the License.
 
 from __future__ import absolute_import, print_function
-
+from math import sqrt
 
 from IPython.core.display import display
 
 import warnings
+from cameo.core.result import Result
 from driven.generic.normalization import log_plus_one
 from driven.vizualization.escher_viewer import EscherViewer
 
@@ -53,9 +54,9 @@ class GimmeResult(ExpressionBasedResult):
     def data_frame(self):
         index = list(self.fluxes.keys())
         data = np.zeros((len(self._fluxes.keys()), 4))
-        data[:, 0] = list(self._fluxes.values())
-        data[:, 1] = list(self._fba_fluxes.values())
-        data[:, 2] = [self.expression.get(r, float("nan")) for r in self._fluxes.keys()]
+        data[:, 0] = [self._fluxes[r] for r in index]
+        data[:, 1] = [self._fba_fluxes[r] for r in index]
+        data[:, 2] = [self.expression.get(r, float("nan")) for r in index]
         data[:, 3] = [self.reaction_inconsistency_score(r) for r in index]
         return DataFrame(data, index=index, columns=["gimme_fluxes", "fba_fluxes", "expression", "inconsistency_scores"])
 
@@ -106,3 +107,102 @@ class GimmeResult(ExpressionBasedResult):
         drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
         display(drop_down)
         viewer("gimme_fluxes")
+
+    def compare(self, other_result, self_key="A", other_key="B"):
+        assert isinstance(other_result, FluxDistributionResult)
+        return FluxDistributionComparison(self, other_result, self_key, other_key)
+
+
+class FluxDistributionComparison(Result):
+    def __init__(self, flux_dist_a, flux_dist_b, a_key="A", b_key="B", *args, **kwargs):
+        super(FluxDistributionComparison, self).__init__(*args, **kwargs)
+        assert isinstance(flux_dist_a, FluxDistributionResult)
+        assert isinstance(flux_dist_b, FluxDistributionResult)
+        assert all([rid in flux_dist_a.fluxes for rid in flux_dist_b]) and \
+               all([rid in flux_dist_b.fluxes for rid in flux_dist_a])
+
+        self._a_key = a_key
+        self._fluxes_a = flux_dist_a
+
+        self._b_key = b_key
+        self._fluxes_b = flux_dist_b
+
+    def _manhattan_distance(self, value):
+        return abs(self._fluxes_a[value] - self._fluxes_b[value])
+
+    @property
+    def manhattan_distance(self):
+        return {rid: self._manhattan_distance(rid) for rid in self._fluxes_a.keys()}
+
+    def _euclidean_distance(self, value):
+        return sqrt(self._fluxes_a[value] - self._fluxes_b[value])
+
+    @property
+    def euclidean_distance(self):
+        return {rid: self._euclidean_distance(rid) for rid in self._fluxes_a.keys()}
+
+    def _activity(self, value):
+        value_a = 1 if abs(self._fluxes_a[value]) > 1e-6 else 0
+        value_b = 1 if abs(self._fluxes_b[value]) > 1e-6 else 0
+
+        return value_a - value_b
+
+    @property
+    def activity_profile(self):
+        return {rid: self._activity(rid) for rid in self._fluxes_a.keys()}
+
+    @property
+    def data_frame(self):
+        index = list(self._fluxes_a.keys())
+        columns = ["fluxes_%s" % self._a_key, "fluxes_%s" % self._b_key,
+                   "manhattan_distance", "euclidean_distance", "activity_profile"]
+        data = np.zeros((len(self._fluxes_a.keys()), 5))
+        data[:, 0] = [self._fluxes_a.fluxes[r] for r in index]
+        data[:, 1] = [self._fluxes_b.fluxes[r] for r in index]
+        data[:, 2] = [self._manhattan_distance(r) for r in index]
+        data[:, 3] = [self._euclidean_distance(r) for r in index]
+        data[:, 4] = [self._activity(r) for r in index]
+        return DataFrame(data, index=index, columns=columns)
+
+    def plot(self, grid=None, width=None, height=None, title=None):
+        pass
+
+    def display_on_map(self, map_name):
+        color_scales = {
+            "fluxes_%s" % self._a_key: [dict(type='min', color="red", size=20),
+                                        dict(type='value', value=0, color="blue", size=7),
+                                        dict(type='max', color='green', size=20)],
+            "fluxes_%s" % self._b_key: [dict(type='min', color="red", size=20),
+                                        dict(type='value', value=0, color="blue", size=7),
+                                        dict(type='max', color='green', size=20)],
+            "manhattan_distance":      [dict(type='min', color="red", size=20),
+                                        dict(type='value', value=0, color="blue", size=7),
+                                        dict(type='max', color='green', size=20)],
+            "euclidean_distance":      [dict(type='min', color="red", size=20),
+                                        dict(type='value', value=0, color="blue", size=7),
+                                        dict(type='max', color='green', size=20)],
+            "activity_profile":      [dict(type='value', value=-1, color="red", size=10),
+                                        dict(type='value', value=0, color="blue", size=10),
+                                        dict(type='value', value=1, color='green', size=10)],
+        }
+
+        normalization_functions = {
+            "fluxes_%s" % self._a_key: log_plus_one,
+            "fluxes_%s" % self._b_key: log_plus_one,
+            "manhattan_distance": float,
+            "euclidean_distance": float,
+            "activity_profile": int
+        }
+
+        viewer = EscherViewer(self.data_frame, map_name, color_scales, normalization_functions)
+        drop_down = Dropdown()
+        drop_down.options = {
+            "Flux Distribution %s" % self._a_key: "fluxes_%s" % self._a_key,
+            "Flux Distribution %s" % self._b_key: "fluxes_%s" % self._b_key,
+            "Manhattan Distance": "manhattan_distance",
+            "Euclidean Distance": "euclidean_distance",
+            "Activity Profile": "activity_profile"
+        }
+        drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
+        display(drop_down)
+        viewer("fluxes_%s" % self._a_key)
