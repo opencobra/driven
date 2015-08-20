@@ -19,7 +19,7 @@ from __future__ import absolute_import, print_function
 from setuptools import setup, find_packages
 requirements = [
     'cameo>=0.5',
-    'cobra>=0.4',
+    'cobra==0.4.0b2',
     'ipython>=3.0',
     'pyzmq>=14.5'
 ]
