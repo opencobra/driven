@@ -27,7 +27,7 @@ from driven.data_sets.normalization import or2min_and2max
 from driven.flux_analysis.results import GimmeResult
 
 
-def gimme(model, expression_profile=None, cutoff=None, objective=None, fraction_of_optimum=0.9,
+def gimme(model, expression_profile=None, cutoff=None, objective=None, objective_dist=None, fraction_of_optimum=0.9,
           normalization=or2min_and2max, condition=None, *args, **kwargs):
     """
     Gene Inactivity Moderated by Metabolism and Expression (GIMME)
@@ -39,15 +39,17 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, fraction_
     expression_profile: ExpressionProfile
         An expression profile
     cutoff: float
-
-    reference_objective: str or other cameo compatible objective
+        inactivity threshold
+    objective: str or other cameo compatible objective
         The Minimal Required Functionalities (MRF)
+    objective_dist: FluxDistributionResult
+        A predetermined flux distribution for the objective can be provided (optional).
     fraction_of_optimum: float
         The fraction of the MRF
     normalization: function
         expression profile normalization function
     condition: str, int or None
-        The condition from the expression profile. If None (defulat), the first condition on the profile will be used.
+        The condition from the expression profile. If None (default), the first condition on the profile will be used.
     normalization: function
         The normalization function to convert the gene expression profile into reaction expression profile (default: max)
 
@@ -65,15 +67,18 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, fraction_
     if objective is None:
         objective = model.objective
 
-    fba_result = fba(model, objective)
+    if objective_dist is None:
+        objective_dist = fba(model, objective)
+
+    assert isinstance(objective_dist, FluxDistributionResult)
 
     if objective.direction == 'max':
         fix_obj_constraint = model.solver.interface.Constraint(model.objective.expression,
-                                                               lb=fraction_of_optimum * fba_result.objective_value,
+                                                               lb=fraction_of_optimum * objective_dist.objective_value,
                                                                name="required metabolic functionalities")
     else:
         fix_obj_constraint = model.solver.interface.Constraint(model.objective.expression,
-                                                               ub=fraction_of_optimum * fba_result.objective_value,
+                                                               ub=fraction_of_optimum * objective_dist.objective_value,
                                                                name="required metabolic functionalities")
     objective_terms = list()
 
@@ -93,7 +98,7 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, fraction_
         tm(do=partial(model.solver._add_constraint, fix_obj_constraint),
            undo=partial(model.solver._remove_constraints, [fix_obj_constraint]))
 
-        return GimmeResult(model.solve(), fba_result.fluxes, reaction_profile, cutoff)
+        return GimmeResult(model.solve(), objective_dist.fluxes, reaction_profile, cutoff)
 
 
 def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsilon=0.1, condition=None,
