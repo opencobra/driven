@@ -13,6 +13,7 @@
 # limitations under the License.
 from cameo.visualization.escher_ext import NotebookBuilder
 from IPython.display import display
+import os
 
 
 class EscherViewer(object):
@@ -32,7 +33,12 @@ class EscherViewer(object):
             self.builder.update(reaction_data=reaction_data, reaction_scale=reaction_scale)
 
     def _init_builder(self, reaction_data, reaction_scale):
-        self.builder = NotebookBuilder(map_name=self.map_name,
-                                       reaction_data=reaction_data,
-                                       reaction_scale=reaction_scale)
+        if os.path.isfile(self.map_name):
+            self.builder = NotebookBuilder(map_json=self.map_name,
+                                           reaction_data=reaction_data,
+                                           reaction_scale=reaction_scale)
+        else:
+            self.builder = NotebookBuilder(map_name=self.map_name,
+                                           reaction_data=reaction_data,
+                                           reaction_scale=reaction_scale)
         display(self.builder.display_in_notebook())
