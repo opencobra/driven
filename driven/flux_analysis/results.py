@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from __future__ import absolute_import, print_function
+from collections import OrderedDict
 from math import sqrt
 
 from IPython.core.display import display
@@ -142,8 +143,15 @@ class FluxDistributionComparison(Result):
         return {rid: self._euclidean_distance(rid) for rid in self._fluxes_a.keys()}
 
     def _activity(self, value):
-        value_a = 1 if abs(self._fluxes_a[value]) > 1e-6 else 0
-        value_b = 1 if abs(self._fluxes_b[value]) > 1e-6 else 0
+        value_a = abs(self._fluxes_a[value])
+        value_b = abs(self._fluxes_b[value]) > 1e-6
+
+        if value_a < 1e-6 and value_b < 1e-6:
+            return None
+
+        else:
+            value_a = 1 if value_a > 1e-6 else 0
+            value_b = 1 if value_b > 1e-6 else 0
 
         return value_a - value_b
 
@@ -196,13 +204,13 @@ class FluxDistributionComparison(Result):
 
         viewer = EscherViewer(self.data_frame, map_name, color_scales, normalization_functions)
         drop_down = Dropdown()
-        drop_down.options = {
+        drop_down.options = OrderedDict({
             "Flux Distribution %s" % self._a_key: "fluxes_%s" % self._a_key,
             "Flux Distribution %s" % self._b_key: "fluxes_%s" % self._b_key,
             "Manhattan Distance": "manhattan_distance",
             "Euclidean Distance": "euclidean_distance",
             "Activity Profile": "activity_profile"
-        }
+        })
         drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
         display(drop_down)
         viewer("fluxes_%s" % self._a_key)

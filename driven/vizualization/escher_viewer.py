@@ -18,6 +18,7 @@ from __future__ import absolute_import, print_function
 from cameo.visualization.escher_ext import NotebookBuilder
 from IPython.display import display
 import os
+import six
 
 
 class EscherViewer(object):
@@ -30,6 +31,7 @@ class EscherViewer(object):
 
     def __call__(self, column):
         reaction_data = dict(self.data_frame[column].apply(self.normalization_functions[column]))
+        reaction_data = {r: v for r, v in six.iteritems(reaction_data) if v is not None}
         reaction_scale = self.color_scales[column]
         if self.builder is None:
             self._init_builder(reaction_data, reaction_scale)
