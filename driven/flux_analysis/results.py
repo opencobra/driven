@@ -118,8 +118,8 @@ class FluxDistributionComparison(Result):
         super(FluxDistributionComparison, self).__init__(*args, **kwargs)
         assert isinstance(flux_dist_a, FluxDistributionResult)
         assert isinstance(flux_dist_b, FluxDistributionResult)
-        assert all([rid in flux_dist_a.fluxes for rid in flux_dist_b]) and \
-               all([rid in flux_dist_b.fluxes for rid in flux_dist_a])
+        assert all([rid in flux_dist_a.fluxes for rid in flux_dist_b.fluxes]) and \
+               all([rid in flux_dist_b.fluxes for rid in flux_dist_a.fluxes])
 
         self._a_key = a_key
         self._fluxes_a = flux_dist_a
@@ -135,7 +135,7 @@ class FluxDistributionComparison(Result):
         return {rid: self._manhattan_distance(rid) for rid in self._fluxes_a.keys()}
 
     def _euclidean_distance(self, value):
-        return sqrt(self._fluxes_a[value] - self._fluxes_b[value])
+        return sqrt(self._fluxes_a[value]**2 - self._fluxes_b[value]**2)
 
     @property
     def euclidean_distance(self):
