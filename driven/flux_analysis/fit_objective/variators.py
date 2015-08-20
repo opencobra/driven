@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import, print_function
+
 
 def zero_one_binary_variator(random, candidates, args):
     mutation_rate = args.get("mutation_rate", 0.15)

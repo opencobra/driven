@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import, print_function
+
 
 def zero_one_binary_generator(random, args):
     max_objectives = args.get('max_objectives', 5)
