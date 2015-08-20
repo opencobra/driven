@@ -18,14 +18,15 @@ from __future__ import absolute_import, print_function
 
 from setuptools import setup, find_packages
 requirements = [
-    "cameo>=v0.2",
-    "ipython>=3.0",
-    "pyzmq>=14.5", 'cobra>=0.3.2'
+    'cameo>=0.5',
+    'cobra>=0.4',
+    'ipython>=3.0',
+    'pyzmq>=14.5'
 ]
 
 setup(
     name='driven',
-    version="0.0.0",
+    version="0.0.1a1",
     packages=find_packages(),
     install_requires=requirements,
     include_package_data=True,
