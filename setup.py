@@ -26,7 +26,7 @@ requirements = [
 
 setup(
     name='driven',
-    version="0.0.1a1",
+    version="0.0.1a3",
     packages=find_packages(),
     install_requires=requirements,
     include_package_data=True,
