@@ -62,7 +62,7 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
     assert isinstance(model, SolverBasedModel)
     assert isinstance(expression_profile, ExpressionProfile)
     assert isinstance(fraction_of_optimum, numbers.Number)
-    assert isinstance(cutoff, float)
+    assert isinstance(cutoff, numbers.Number)
 
     if objective is None:
         objective = model.objective
