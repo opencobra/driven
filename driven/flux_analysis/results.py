@@ -135,7 +135,7 @@ class FluxDistributionComparison(Result):
         return {rid: self._manhattan_distance(rid) for rid in self._fluxes_a.keys()}
 
     def _euclidean_distance(self, value):
-        return sqrt(self._fluxes_a[value]**2 - self._fluxes_b[value]**2)
+        return sqrt((self._fluxes_a[value] - self._fluxes_b[value])**2)
 
     @property
     def euclidean_distance(self):
