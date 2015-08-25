@@ -16,8 +16,8 @@ from __future__ import absolute_import, print_function
 
 
 from functools import partial
-from cameo import pfba
 from cameo.util import TimeMachine
+from driven.flux_analysis.results import C13BasedFluxDistribution
 
 
 def fba(model, objective=None, distribution=None, *args, **kwargs):
@@ -28,4 +28,11 @@ def fba(model, objective=None, distribution=None, *args, **kwargs):
                undo=partial(setattr, reaction, "upper_bound", reaction.upper_bound))
             tm(do=partial(setattr, reaction, "lower_bound", distribution[reaction_id][0]),
                undo=partial(setattr, reaction, "lower_bound", reaction.lower_bound))
-        return pfba(model, objective, *args, **kwargs)
+
+        if objective is not None:
+            tm(do=partial(setattr, model, "objective", objective),
+               undo=partial(setattr, model, "objective", model.objective))
+
+        solution = model.solve()
+
+    return C13BasedFluxDistribution(solution, distribution)

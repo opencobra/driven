@@ -14,7 +14,6 @@
 
 from __future__ import absolute_import, print_function
 
-
 from cameo.visualization.escher_ext import NotebookBuilder
 from IPython.display import display
 import os
@@ -42,9 +41,13 @@ class EscherViewer(object):
         if os.path.isfile(self.map_name):
             self.builder = NotebookBuilder(map_json=self.map_name,
                                            reaction_data=reaction_data,
-                                           reaction_scale=reaction_scale)
+                                           reaction_scale=reaction_scale,
+                                           reaction_no_data_color="lightgray",
+                                           reaction_no_data_size=5)
         else:
             self.builder = NotebookBuilder(map_name=self.map_name,
                                            reaction_data=reaction_data,
-                                           reaction_scale=reaction_scale)
+                                           reaction_scale=reaction_scale,
+                                           reaction_no_data_color="lightgray",
+                                           reaction_no_data_size=5)
         display(self.builder.display_in_notebook())

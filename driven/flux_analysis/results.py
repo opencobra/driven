@@ -6,7 +6,7 @@
 
 # http://www.apache.org/licenses/LICENSE-2.0
 
-# Unless required by applicable law or agreed to in writing, software
+# Unless requiyellow by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
@@ -37,6 +37,12 @@ from cameo.flux_analysis.simulation import FluxDistributionResult
 from pandas import DataFrame
 import numpy as np
 import six
+
+
+class C13BasedFluxDistribution(FluxDistributionResult):
+    def __init__(self, solution, c13_flux_distribution, *args, **kwargs):
+        super(C13BasedFluxDistribution, self).__init__(solution, c13_flux_distribution, *args, **kwargs)
+        self._c13_fluxes = c13_flux_distribution
 
 
 class ExpressionBasedResult(FluxDistributionResult):
@@ -82,13 +88,13 @@ class GimmeResult(ExpressionBasedResult):
 
     def display_on_map(self, map_name=None):
         color_scales = {
-            "gimme_fluxes":         [dict(type='min', color="red", size=20),
-                                     dict(type='value', value=0, color="blue", size=7),
-                                     dict(type='max', color='green', size=20)],
-            "expression":           [dict(type='value', value=log_plus_one(self.cutoff), color="blue", size=10),
-                                     dict(type='max', color='green', size=20),
-                                     dict(type='min', color='red', size=5)],
-            "inconsistency_scores": [dict(type='value', value=0, color="blue", size=10),
+            "gimme_fluxes":         [dict(type='min', color="yellow", size=20),
+                                     dict(type='value', value=0, color="green", size=7),
+                                     dict(type='max', color='blue', size=20)],
+            "expression":           [dict(type='value', value=log_plus_one(self.cutoff), color="green", size=10),
+                                     dict(type='max', color='blue', size=20),
+                                     dict(type='min', color='yellow', size=5)],
+            "inconsistency_scores": [dict(type='value', value=0, color="yellow", size=10),
                                      dict(type='max', color='green', size=20)]
         }
 
@@ -144,7 +150,7 @@ class FluxDistributionComparison(Result):
 
     def _activity(self, value):
         value_a = abs(self._fluxes_a[value])
-        value_b = abs(self._fluxes_b[value]) > 1e-6
+        value_b = abs(self._fluxes_b[value])
 
         if value_a < 1e-6 and value_b < 1e-6:
             return None
@@ -177,21 +183,21 @@ class FluxDistributionComparison(Result):
 
     def display_on_map(self, map_name):
         color_scales = {
-            "fluxes_%s" % self._a_key: [dict(type='min', color="red", size=20),
+            "fluxes_%s" % self._a_key: [dict(type='min', color="yellow", size=20),
                                         dict(type='value', value=0, color="blue", size=7),
                                         dict(type='max', color='green', size=20)],
-            "fluxes_%s" % self._b_key: [dict(type='min', color="red", size=20),
+            "fluxes_%s" % self._b_key: [dict(type='min', color="yellow", size=20),
                                         dict(type='value', value=0, color="blue", size=7),
                                         dict(type='max', color='green', size=20)],
-            "manhattan_distance":      [dict(type='min', color="red", size=20),
+            "manhattan_distance":      [dict(type='min', color="yellow", size=20),
                                         dict(type='value', value=0, color="blue", size=7),
                                         dict(type='max', color='green', size=20)],
-            "euclidean_distance":      [dict(type='min', color="red", size=20),
+            "euclidean_distance":      [dict(type='min', color="yellow", size=20),
                                         dict(type='value', value=0, color="blue", size=7),
                                         dict(type='max', color='green', size=20)],
-            "activity_profile":      [dict(type='value', value=-1, color="red", size=10),
-                                        dict(type='value', value=0, color="blue", size=10),
-                                        dict(type='value', value=1, color='green', size=10)],
+            "activity_profile":        [dict(type='value', value=-1, color="yellow", size=10),
+                                        dict(type='value', value=0, color="green", size=10),
+                                        dict(type='value', value=1, color='blue', size=10)],
         }
 
         normalization_functions = {
@@ -211,6 +217,7 @@ class FluxDistributionComparison(Result):
             "Euclidean Distance": "euclidean_distance",
             "Activity Profile": "activity_profile"
         })
+        drop_down.value = "fluxes_%s" % self._a_key
         drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
         display(drop_down)
         viewer("fluxes_%s" % self._a_key)

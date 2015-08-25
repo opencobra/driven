@@ -18,10 +18,10 @@ from __future__ import absolute_import, print_function
 from math import log
 
 
-def log_plus_one(value):
-    if value == 0:
+def log_plus_one(value, threshold=1e-6):
+    if abs(value) <= threshold:
         return 0
-    elif value > 0:
+    elif value > threshold:
         return log(value + 1)
-    elif value < 0:
+    elif value < threshold:
         return - log(abs(value) + 1)
