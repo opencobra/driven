@@ -88,7 +88,7 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
 
     condition = expression_profile.conditions[0] if condition is None else condition
 
-    reaction_profile = expression_profile.to_reaction_dict(condition, model, normalization)
+    reaction_profile = expression_profile.to_reaction_dict(condition, model, cutoff, normalization)
     coefficients = {r: cutoff - exp if cutoff > exp else 0 for r, exp in six.iteritems(reaction_profile)}
 
     for rid, coefficient in six.iteritems(coefficients):
