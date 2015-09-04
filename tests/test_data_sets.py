@@ -25,10 +25,12 @@ class ExpressionProfileTestCase(unittest.TestCase):
 
         expression = np.zeros((1, 4))
         expression[0] = [10, 11, 65, 109]
+        pvalues = np.zeros((1, 3))
+        pvalues[0] = [0.02, 0.048, 0.0012]
 
-        profile = ExpressionProfile(genes, conditions, expression)
+        profile = ExpressionProfile(genes, conditions, expression, pvalues)
 
-        self.assertEqual(profile.differences, {"G1": [0, 1, 1]})
+        self.assertEqual(profile.differences(), {"G1": [0, 0, 1]})
 
     def test_export_import(self):
         genes = ["G1"]
