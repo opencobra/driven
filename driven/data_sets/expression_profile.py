@@ -14,9 +14,9 @@
 
 from __future__ import absolute_import, print_function
 
-
 from itertools import combinations
-from numpy import ndarray
+from bokeh.charts import Histogram
+from numpy import ndarray, vectorize
 
 from driven.data_sets.normalization import or2min_and2max
 from pandas import DataFrame
@@ -97,6 +97,12 @@ class ExpressionProfile(object):
     def p_values(self):
         self._p_values = None
 
+    def histogram(self, transform=float, bins=100):
+        df = self.data_frame
+        transform = vectorize(transform)
+
+        return Histogram(DataFrame(transform(df.values), index=df.index, columns=df.columns), bins=bins, legend=True)
+
     def to_dict(self, condition):
         return dict(zip(self.identifiers, self.expression[:, self._condition_index[condition]]))
 
@@ -133,17 +139,20 @@ class ExpressionProfile(object):
 
         return self.expression[i, j]
 
-    @property
-    def differences(self):
+    def differences(self, cut_p_value=0.005):
         diff = {}
         for index, gene in enumerate(self.identifiers):
             diff[gene] = []
             for i in range(1, len(self.conditions)):
                 start, end = self.expression[index, i-1: i+1]
-                if start < end:
-                    diff[gene].append(+1)
-                elif start > end:
-                    diff[gene].append(-1)
+                p_value = self.p_values[index, i-1]
+                if p_value <= cut_p_value:
+                    if start < end:
+                        diff[gene].append(+1)
+                    elif start > end:
+                        diff[gene].append(-1)
+                    else:
+                        diff[gene].append(0)
                 else:
                     diff[gene].append(0)
 
