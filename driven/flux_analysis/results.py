@@ -6,7 +6,7 @@
 
 # http://www.apache.org/licenses/LICENSE-2.0
 
-# Unless requiyellow by applicable law or agreed to in writing, software
+# Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
@@ -41,8 +41,17 @@ import six
 
 class C13BasedFluxDistribution(FluxDistributionResult):
     def __init__(self, solution, c13_flux_distribution, *args, **kwargs):
-        super(C13BasedFluxDistribution, self).__init__(solution, c13_flux_distribution, *args, **kwargs)
+        super(C13BasedFluxDistribution, self).__init__(solution, *args, **kwargs)
         self._c13_fluxes = c13_flux_distribution
+
+    @property
+    def data_frame(self):
+        index = list(self.fluxes.keys())
+        data = np.zeros((len(self._fluxes.keys()), 3))
+        data[:, 0] = [self._fluxes[r] for r in index]
+        data[:, 1] = [self._c13_fluxes.get(r, [np.nan, np.nan])[0] for r in index]
+        data[:, 2] = [self._c13_fluxes.get(r, [np.nan, np.nan])[1] for r in index]
+        return DataFrame(data, index=index, columns=["fluxes", "c13_lower_limit", "c13_upper_limit"])
 
 
 class ExpressionBasedResult(FluxDistributionResult):
