@@ -17,16 +17,23 @@
 from __future__ import absolute_import, print_function
 
 from setuptools import setup, find_packages
-requirements = [
-    'cameo>=0.5',
-    'cobra==0.4.0b2',
-    'ipython>=3.0',
-    'pyzmq>=14.5'
-]
+import os
+
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if on_rtd:
+    requirements = []
+else:
+    requirements = [
+        'cameo>=0.5',
+        'sympy>=0.7.5',
+        'cobra==0.4.0b2',
+        'ipython>=3.0',
+        'pyzmq>=14.5'
+    ]
 
 setup(
     name='driven',
-    version="0.0.1a3",
+    version="0.0.1b1",
     packages=find_packages(),
     install_requires=requirements,
     include_package_data=True,
@@ -36,7 +43,8 @@ setup(
     license='Apache License Version 2.0',
     keywords='biology metabolism bioinformatics high-throughput',
     url='TBD',
-    long_description="A package for data driven modeling and analysis.",
+    long_description="A package for data driven modeling and analysis. It implements novel and state-of-the-art methods"
+                     " to integrate 'omics' data in genome-scale methods.",
     classifiers=[
         'Development Status :: 1 - Planning',
         'Topic :: Utilities',
