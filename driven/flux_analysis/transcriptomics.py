@@ -47,7 +47,7 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
     objective: str or other cameo compatible objective
         The Minimal Required Functionalities (MRF)
     objective_dist: FluxDistributionResult
-        A predetermined flux distribution for the objective can be provided (optional).
+        A predetermined flux distribution for the objective can be provided (optional)
     fraction_of_optimum: float
         The fraction of the MRF
     normalization: function
@@ -117,7 +117,9 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
     expression_profile: ExpressionProfile
         The expression profile
     low_cutoff: number
+        The cut off value for low expression values
     high_cutoff: number
+        The cut off value for high expression values
     epsilon: float
     """
 
