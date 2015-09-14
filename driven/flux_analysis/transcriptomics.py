@@ -34,7 +34,7 @@ from driven.flux_analysis.results import GimmeResult
 def gimme(model, expression_profile=None, cutoff=None, objective=None, objective_dist=None, fraction_of_optimum=0.9,
           normalization=or2min_and2max, condition=None, *args, **kwargs):
     """
-    Gene Inactivity Moderated by Metabolism and Expression (GIMME)
+    Gene Inactivity Moderated by Metabolism and Expression (GIMME)[1]
 
     Parameters
     ----------
@@ -61,6 +61,10 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
     -------
     GimmeResult
 
+    References
+    ----------
+    .. [1] Becker, S. a, & Palsson, B. O. (2008). Context-specific metabolic networks are consistent with experiments.
+       PLoS Computational Biology, 4(5), e1000082. doi:10.1371/journal.pcbi.1000082
     """
 
     assert isinstance(model, SolverBasedModel)
