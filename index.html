@@ -11,11 +11,18 @@
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+
+    <!-- highlight.js -->
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.8.0/styles/googlecode.min.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.8.0/highlight.min.js"></script>
+
+
   </head>
   <body>
     <div class="wrapper">
       <header>
           <img src="driven_logo.png"/>
+          <p style="text-align: center;"><strong style="color: red;">Site under construction...</strong></p>
         <ul>
           <li><a href="https://github.com/biosustain/driven/zipball/master">Download <strong>ZIP File</strong></a></li>
           <li><a href="https://github.com/biosustain/driven/tarball/master">Download <strong>TAR Ball</strong></a></li>
@@ -38,41 +45,54 @@ All of this can be used within jupyter notebooks.</p>
 <h3>
 <a id="state-of-the-art-methods" class="anchor" href="#state-of-the-art-methods" aria-hidden="true"><span class="octicon octicon-link"></span></a>State-of-the-art Methods</h3>
 
-<p>
-    <h5><i>Transcriptomics</i></h5>
+    <h4 class="methods-group"><i>Transcriptomics</i></h4>
     <ul>
-        <li>GIMME (<code>driven.flux_analysis.transcriptomics.gimme</code>)</li>
-        <li>iMAT (<code>driven.flux_analysis.transcriptomics.imat</code>)</li>
+        <li>GIMME <code>driven.flux_analysis.transcriptomics.gimme</code></li>
+        <li>iMAT <code>driven.flux_analysis.transcriptomics.imat</code></li>
     </ul>
-    <h5><i>Proteomics</i></h5>
+    <h4 class="methods-group"><i>Proteomics</i></h4>
     <ul>
-        <li>GIMME (<code>driven.flux_analysis.proteomics.gimme</code>)</li>
+        <li>GIMME <code>driven.flux_analysis.proteomics.gimme</code></li>
     </ul>
-    <h5><i>Thermodynamics</i></h5>
+    <h4 class="methods-group"><i>Thermodynamics</i></h4>
     <ul>
-        <li>TFBA (<code>driven.flux_analysis.thermodynamics.tfba</code>)</li>
+        <li>TFBA <code>driven.flux_analysis.thermodynamics.tfba</code></li>
     </ul>
-    <h5><i>C13</i></h5>
+    <h4 class="methods-group"><i>Fluxomics</i></h4>
     <ul>
-        <li>c13_fba (<code>driven.flux_analysis.c13.fba</code>)</li>
+        <li>FBA <code>driven.flux_analysis.fluxomics.fba</code></li>
     </ul>
-</p>
+
+
 
 <h3>
-<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<a id="easy-access" class="anchor" href="#easy-access" aria-hidden="true"><span class="octicon octicon-link"></span></a>Easy data access</h3>
+    Importing data into driven is easy. Driven reads tabular files directly:
+    <h4 class="methods-group"><i>Expression Profiles</i></h4>
+          Expression data can be easily imported from comma separated values (CSV) files:
+          <pre><code class="python">from driven.datasets.expression_profile import ExpressionProfile
+data = ExpressionProfile.from_csv("your_data.csv")</code></pre>
+          If the data in the file needs to be filtered or processed, driven can import data from pandas <a href="http://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.html">DataFrame</a>.
+          <pre><code class="python">data = ExpressionProfile.from_data_frame(dataframe)</code></pre>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor’s GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+    <h4 class="methods-group"><i>Flux data</i></h4>
+          It is also very simple to compute a flux distribution using flux measurements, e.g. 13C fluxes.
+          The flux constraints can be imported in two formats: measurements +- error, or upper and lower limits.
 
-<h3>
-<a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+          <pre><code class="python">from driven.datasets.fluxes import FluxConstraints
+# measurements
+flux_constraints = FluxConstraints.from_csv("measurments.csv", type="measurements")
+# constraints
+flux_constraints = FluxConstraints.from_csv("constraints.csv", type="constraints")</code></pre>
 
-<p>Having trouble with Pages? Check out our <a href="https://help.github.com/pages">documentation</a> or <a href="https://github.com/contact">contact support</a> and we’ll help you sort it out.</p>
+    More details about pre-processing data sets can be found in <a href="">Workflows</a>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/biosustain">biosustain</a></p>
         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
       </footer>
     </div>
+     <script>hljs.initHighlightingOnLoad();</script>
     <script src="javascripts/scale.fix.js"></script>
     
   </body>

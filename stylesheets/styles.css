@@ -45,6 +45,10 @@ a small {
   display:block;
 }
 
+.methods-group {
+    margin-bottom: 0;
+}
+
 .wrapper {
   width:860px;
   margin:0 auto;
