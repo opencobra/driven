@@ -89,6 +89,42 @@ class ExpressionProfile(object):
         identifiers = list(data_frame.index)
         return ExpressionProfile(identifiers, conditions, expression, p_values)
 
+    def __init__(self, identifiers, conditions, expression, p_values=None):
+        assert isinstance(identifiers, list)
+        assert isinstance(conditions, list)
+        assert isinstance(expression, ndarray)
+        assert expression.shape == (len(identifiers), len(conditions))
+
+        self.conditions = conditions
+        self._condition_index = dict((c, i) for i, c in enumerate(conditions))
+        self.identifiers = identifiers
+        self._gene_index = dict((g, i) for i, g in enumerate(identifiers))
+        self.expression = expression
+        self._p_values = p_values
+
+    def __getitem__(self, item):
+        if not isinstance(item, tuple):
+            raise AttributeError(
+                "Non supported slicing method. E.g. profile[1,2] or profile[\"id1\", \"condition_a\"]")
+
+        if isinstance(item[0], str):
+            i = self._gene_index[item[0]]
+        elif isinstance(item[0], (slice, int)):
+            i = item[0]
+        else:
+            raise AttributeError(
+                "Non supported slicing value. E.g. profile[1,2] or profile[\"id1\", \"condition_a\"]")
+
+        if isinstance(item[1], str):
+            j = self._condition_index[item[1]]
+        elif isinstance(item[1], (slice, int)):
+            j = item[1]
+        else:
+            raise AttributeError(
+                "Non supported slicing method. E.g. profile[1,2] or profile[\"id1\", \"condition_a\"]")
+
+        return self.expression[i, j]
+
     def __cmp__(self, other):
         if not isinstance(other, ExpressionProfile):
             return False
@@ -117,17 +153,7 @@ class ExpressionProfile(object):
             return DataFrame(self.expression+self.p_values, index=self.identifiers,
                              columns=self.conditions+self.p_value_columns)
 
-    def __init__(self, identifiers, conditions, expression, p_values=None):
-        assert isinstance(identifiers, list)
-        assert isinstance(conditions, list)
-        assert isinstance(expression, ndarray)
 
-        self.conditions = conditions
-        self._condition_index = dict((c, i) for i, c in enumerate(conditions))
-        self.identifiers = identifiers
-        self._gene_index = dict((g, i) for i, g in enumerate(identifiers))
-        self.expression = expression
-        self._p_values = p_values
 
     @property
     def p_value_columns(self):
@@ -192,29 +218,6 @@ class ExpressionProfile(object):
                 reaction_exp[r.id] = normalization(r, {g.id: gene_exp.get(g.id, cutoff) for g in reaction_genes})
 
         return reaction_exp
-
-    def __getitem__(self, item):
-        if not isinstance(item, tuple):
-            raise AttributeError(
-                "Non supported slicing method. E.g. profile[1,2] or profile[\"id1\", \"condition_a\"]")
-
-        if isinstance(item[0], str):
-            i = self._gene_index[item[0]]
-        elif isinstance(item[0], (slice, int)):
-            i = item[0]
-        else:
-            raise AttributeError(
-                "Non supported slicing value. E.g. profile[1,2] or profile[\"id1\", \"condition_a\"]")
-
-        if isinstance(item[1], str):
-            j = self._condition_index[item[1]]
-        elif isinstance(item[1], (slice, int)):
-            j = item[1]
-        else:
-            raise AttributeError(
-                "Non supported slicing method. E.g. profile[1,2] or profile[\"id1\", \"condition_a\"]")
-
-        return self.expression[i, j]
 
     def differences(self, p_value=0.005):
         diff = {}

@@ -17,10 +17,14 @@ from __future__ import absolute_import, print_function
 
 from functools import partial
 from cameo.util import TimeMachine
+from driven.data_sets.fluxes import FluxConstraints
 from driven.flux_analysis.results import C13BasedFluxDistribution
 
 
 def fba(model, objective=None, distribution=None, *args, **kwargs):
+    if not isinstance(distribution, FluxConstraints):
+        raise ValueError("Argument distribution must be instance of FluxConstraint, not %s" % distribution.__class__)
+
     with TimeMachine() as tm:
         for reaction_id in distribution:
             reaction = model.reactions.get_by_id(reaction_id)

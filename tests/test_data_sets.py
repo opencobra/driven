@@ -16,6 +16,7 @@ import unittest
 import numpy as np
 
 from driven.data_sets.expression_profile import ExpressionProfile
+from driven.data_sets.fluxes import FluxConstraints
 
 
 class ExpressionProfileTestCase(unittest.TestCase):
@@ -48,3 +49,20 @@ class ExpressionProfileTestCase(unittest.TestCase):
         new_profile = ExpressionProfile.from_data_frame(data_frame)
 
         self.assertEqual(profile, new_profile)
+
+
+class FluxConstraintsTestCase(unittest.TestCase):
+    def test_export_import(self):
+        reaction_ids = ["R1", "R2", "R3"]
+        limits = np.zeros((3, 2))
+        limits[0] = [0, 10]
+        limits[1] = [0.5, 0.7]
+        limits[2] = [5.1, 5.2]
+        flux_constraints = FluxConstraints(reaction_ids, limits)
+
+        new_flux_constraints = FluxConstraints.from_data_frame(flux_constraints.data_frame, type="constraints")
+
+        print(new_flux_constraints.data_frame)
+
+        self.assertEqual(flux_constraints, new_flux_constraints)
+
