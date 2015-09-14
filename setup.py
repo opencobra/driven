@@ -21,7 +21,7 @@ import os
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if on_rtd:
-    requirements = []
+    requirements = ["numpydoc>=0.5"]
 else:
     requirements = [
         'cameo>=0.5',
