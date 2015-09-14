@@ -28,7 +28,9 @@ else:
         'sympy>=0.7.5',
         'cobra==0.4.0b2',
         'ipython>=3.0',
-        'pyzmq>=14.5'
+        'pyzmq>=14.5',
+        'numpy>=1.9.2',
+        'bokeh>=0.9.3'
     ]
 
 setup(
