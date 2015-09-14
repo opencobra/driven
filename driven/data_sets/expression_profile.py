@@ -28,6 +28,18 @@ class ExpressionProfile(object):
     profile that links genes/proteins to a value (continuous or discrete).
 
     It the storage of single or multiple conditions as well as p-values.
+
+    Attributes
+    ----------
+
+    identifiers: list of strings
+        The gene or protein ids
+    conditions: list of string
+        The conditions in the expression profile (time points, media conditions, etc...)
+    expression: numpy.ndarray
+        An 2 dimensional array (nxm) where n is the number of genes and m the number of conditions.
+    p_values: numpy.ndarray
+        The p-values between conditions.
     """
     @classmethod
     def from_csv(cls, file_path):
