@@ -39,9 +39,9 @@ import numpy as np
 import six
 
 
-class C13BasedFluxDistribution(FluxDistributionResult):
-    def __init__(self, solution, c13_flux_distribution, *args, **kwargs):
-        super(C13BasedFluxDistribution, self).__init__(solution, *args, **kwargs)
+class FluxBasedFluxDistribution(FluxDistributionResult):
+    def __init__(self, fluxes, objective_value, c13_flux_distribution, *args, **kwargs):
+        super(FluxBasedFluxDistribution, self).__init__(fluxes, objective_value, *args, **kwargs)
         self._c13_fluxes = c13_flux_distribution
 
     @property
@@ -55,14 +55,14 @@ class C13BasedFluxDistribution(FluxDistributionResult):
 
 
 class ExpressionBasedResult(FluxDistributionResult):
-    def __init__(self, solution, expression, *args, **kwargs):
-        super(ExpressionBasedResult, self).__init__(solution, *args, **kwargs)
+    def __init__(self, fluxes, objective_value, expression, *args, **kwargs):
+        super(ExpressionBasedResult, self).__init__(fluxes, objective_value, *args, **kwargs)
         self.expression = expression
 
 
 class GimmeResult(ExpressionBasedResult):
-    def __init__(self, solution, fba_fluxes, reaction_expression, cutoff, *args, **kwargs):
-        super(GimmeResult, self).__init__(solution, reaction_expression, *args, **kwargs)
+    def __init__(self, fluxes, objective_value, fba_fluxes, reaction_expression, cutoff, *args, **kwargs):
+        super(GimmeResult, self).__init__(fluxes, objective_value, reaction_expression, *args, **kwargs)
         self._fba_fluxes = fba_fluxes
         self.cutoff = cutoff
 
@@ -157,16 +157,16 @@ class FluxDistributionComparison(Result):
     def euclidean_distance(self):
         return {rid: self._euclidean_distance(rid) for rid in self._fluxes_a.keys()}
 
-    def _activity(self, value):
+    def _activity(self, value, threshold=1e-6):
         value_a = abs(self._fluxes_a[value])
         value_b = abs(self._fluxes_b[value])
 
-        if value_a < 1e-6 and value_b < 1e-6:
+        if value_a < threshold and value_b < threshold:
             return None
 
         else:
-            value_a = 1 if value_a > 1e-6 else 0
-            value_b = 1 if value_b > 1e-6 else 0
+            value_a = 1 if value_a > threshold else 0
+            value_b = 1 if value_b > threshold else 0
 
         return value_a - value_b
 
