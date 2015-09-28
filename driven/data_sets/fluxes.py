@@ -63,6 +63,9 @@ class FluxConstraints(object):
         else:
             return self.reaction_ids == other.reaction_ids and (self.limits == other.limits).all()
 
+    def _repr_html_(self):
+        return self.data_frame._repr_html_()
+
     @property
     def data_frame(self):
         return DataFrame(self.limits, index=self.reaction_ids, columns=["lower_limit", "upper_limit"])
