@@ -168,23 +168,33 @@ class FluxDistributionComparison(Result):
             value_a = 1 if value_a > threshold else 0
             value_b = 1 if value_b > threshold else 0
 
-        return value_a - value_b
+        return float(value_a - value_b)
 
     @property
     def activity_profile(self):
         return {rid: self._activity(rid) for rid in self._fluxes_a.keys()}
 
+    def _fold_change(self, value):
+        value_a = abs(self._fluxes_a[value])
+        value_b = abs(self._fluxes_b[value])
+        try:
+            return float(np.log2(value_a/value_b))
+        except ZeroDivisionError:
+            return None
+
     @property
     def data_frame(self):
         index = list(self._fluxes_a.keys())
         columns = ["fluxes_%s" % self._a_key, "fluxes_%s" % self._b_key,
-                   "manhattan_distance", "euclidean_distance", "activity_profile"]
-        data = np.zeros((len(self._fluxes_a.keys()), 5))
+                   "manhattan_distance", "euclidean_distance",
+                   "activity_profile", "fold_change"]
+        data = np.zeros((len(self._fluxes_a.keys()), 6))
         data[:, 0] = [self._fluxes_a.fluxes[r] for r in index]
         data[:, 1] = [self._fluxes_b.fluxes[r] for r in index]
         data[:, 2] = [self._manhattan_distance(r) for r in index]
         data[:, 3] = [self._euclidean_distance(r) for r in index]
         data[:, 4] = [self._activity(r) for r in index]
+        data[:, 5] = [self._fold_change(r) for r in index]
         return DataFrame(data, index=index, columns=columns)
 
     def plot(self, grid=None, width=None, height=None, title=None):
@@ -207,6 +217,9 @@ class FluxDistributionComparison(Result):
             "activity_profile":        [dict(type='value', value=-1, color="yellow", size=10),
                                         dict(type='value', value=0, color="green", size=10),
                                         dict(type='value', value=1, color='blue', size=10)],
+            "fold_change":             [dict(type='min', color="yellow", size=20),
+                                        dict(type='value', value=0, color="blue", size=7),
+                                        dict(type='max', color='green', size=20)]
         }
 
         normalization_functions = {
@@ -214,7 +227,8 @@ class FluxDistributionComparison(Result):
             "fluxes_%s" % self._b_key: log_plus_one,
             "manhattan_distance": float,
             "euclidean_distance": float,
-            "activity_profile": int
+            "activity_profile": int,
+            "fold_change": float
         }
 
         viewer = EscherViewer(self.data_frame, map_name, color_scales, normalization_functions)
@@ -224,7 +238,8 @@ class FluxDistributionComparison(Result):
             "Flux Distribution %s" % self._b_key: "fluxes_%s" % self._b_key,
             "Manhattan Distance": "manhattan_distance",
             "Euclidean Distance": "euclidean_distance",
-            "Activity Profile": "activity_profile"
+            "Activity Profile": "activity_profile",
+            "Fold Change": "fold_change"
         })
         drop_down.value = "fluxes_%s" % self._a_key
         drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))

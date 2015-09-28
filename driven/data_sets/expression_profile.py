@@ -16,6 +16,7 @@ from __future__ import absolute_import, print_function
 
 from itertools import combinations
 from bokeh.charts import Histogram
+from bokeh.plotting import show
 from numpy import ndarray, vectorize
 
 from driven.data_sets.normalization import or2min_and2max
@@ -190,8 +191,13 @@ class ExpressionProfile(object):
     def histogram(self, transform=float, bins=100):
         df = self.data_frame
         transform = vectorize(transform)
+        values = transform(df.values)
+        df = DataFrame(columns=['exp', 'condition'])
+        for j, c in enumerate(self.conditions):
+            df = df.append(DataFrame({'exp': values[:, j], 'condition': [c for _ in self.identifiers]}), ignore_index=True)
 
-        return Histogram(DataFrame(transform(df.values), index=df.index, columns=df.columns), bins=bins, legend=True)
+        hist = Histogram(df, values='exp', color='condition', bins=bins, legend=True, width=700)
+        show(hist)
 
     def to_dict(self, condition):
         """
@@ -199,7 +205,7 @@ class ExpressionProfile(object):
 
         Parameters
         ----------
-        condition: str or int
+        condition: str or int1
             The condition or the index.
 
         Returns

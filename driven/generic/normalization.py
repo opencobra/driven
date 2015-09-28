@@ -20,8 +20,8 @@ from math import log
 
 def log_plus_one(value, threshold=1e-6):
     if abs(value) <= threshold:
-        return 0
+        return float(0)
     elif value > threshold:
-        return log(value + 1)
+        return float(log(value + 1))
     elif value < threshold:
-        return - log(abs(value) + 1)
+        return float(-log(abs(value) + 1))
