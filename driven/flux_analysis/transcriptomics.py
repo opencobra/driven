@@ -63,7 +63,7 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
 
     References
     ----------
-    .. [1] Becker, S. a, & Palsson, B. O. (2008). Context-specific metabolic networks are consistent with experiments.
+    .. [1] Becker, S. a and Palsson, B. O. (2008). Context-specific metabolic networks are consistent with experiments.
        PLoS Computational Biology, 4(5), e1000082. doi:10.1371/journal.pcbi.1000082
     """
 
@@ -105,8 +105,8 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
            undo=partial(setattr, model, "objective", model.objective.expression))
         tm(do=partial(model.solver._add_constraint, fix_obj_constraint),
            undo=partial(model.solver._remove_constraints, [fix_obj_constraint]))
-
-        return GimmeResult(model.solve(), objective_dist.fluxes, reaction_profile, cutoff)
+        solution = model.solve()
+        return GimmeResult(solution.fluxes, solution.f, objective_dist.fluxes, reaction_profile, cutoff)
 
 
 def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsilon=0.1, condition=None,
@@ -167,12 +167,12 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
                 x_variables.append(x)
 
                 pos_constraint = model.solver.interface.Constraint(
-                    reaction.flux_expression - (1 - x) * reaction.upper_bound,
+                    reaction.flux_expression - (1 - x) * fva_res["upper_bound"][rid],
                     ub=0,
                     name="x_%s_upper" % rid)
 
                 neg_constraint = model.solver.interface.Constraint(
-                    reaction.flux_expression - (1 - x) * RealNumber(reaction.lower_bound),
+                    reaction.flux_expression - (1 - x) * fva_res["lower_bound"][rid],
                     lb=0,
                     name="x_%s_lower" % rid)
 
@@ -194,8 +194,9 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
         with TimeMachine() as tm:
             tm(do=partial(setattr, model, "objective", objective),
                undo=partial(setattr, model, "objective", model.objective))
-            return FluxDistributionResult(model.solve())
 
+            solution = model.solve()
+            return FluxDistributionResult(solution.fluxes, solution.f)
     except:
         traceback.print_exc()
 
