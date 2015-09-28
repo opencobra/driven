@@ -32,9 +32,9 @@ class ExpressionProfile(object):
     Attributes
     ----------
 
-    identifiers: list of strings
+    identifiers: list
         The gene or protein ids
-    conditions: list of string
+    conditions: list
         The conditions in the expression profile (time points, media conditions, etc...)
     expression: numpy.ndarray
         An 2 dimensional array (nxm) where n is the number of genes and m the number of conditions.
@@ -133,6 +133,9 @@ class ExpressionProfile(object):
                    self.conditions == other.conditions and \
                    self._p_values == other._p_values and \
                    self.expression == other.expression
+
+    def _repr_html_(self):
+        return self.data_frame._repr_html_()
 
     @property
     def data_frame(self):
