@@ -17,11 +17,15 @@ from __future__ import absolute_import, print_function
 from cameo.visualization.escher_ext import NotebookBuilder
 from IPython.display import display
 import os
+from pandas import DataFrame
 import six
+
+import numpy as np
 
 
 class EscherViewer(object):
     def __init__(self, data_frame, map_name, color_scales, normalization_functions):
+        assert isinstance(data_frame, DataFrame)
         self.data_frame = data_frame
         self.map_name = map_name
         self.builder = None
@@ -29,8 +33,9 @@ class EscherViewer(object):
         self.normalization_functions = normalization_functions
 
     def __call__(self, column):
-        reaction_data = dict(self.data_frame[column].apply(self.normalization_functions[column]))
+        reaction_data = dict(self.data_frame.dropna()[column].apply(self.normalization_functions[column]))
         reaction_data = {r: v for r, v in six.iteritems(reaction_data) if v is not None}
+        reaction_data = {r: v for r, v in six.iteritems(reaction_data) if v is not np.nan}
         reaction_scale = self.color_scales[column]
         if self.builder is None:
             self._init_builder(reaction_data, reaction_scale)
