@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2015 Novo Nordisk Foundation Center for Biosustainability, DTU.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +20,25 @@ from functools import partial
 from cameo.util import TimeMachine
 
 
-def tfba(model, objective=None, delta_gs=None, K=None, *args, **kwargs):
+def tmfa(model, objective=None, delta_gs=None, K=None, *args, **kwargs):
+    """
+    Thermodynamics-based Metabolic Flux Analysis. [1]
+
+    Arguments
+    ---------
+
+    objective: a compatible objective
+        The objective function of the simulation
+    delta_gs: dict
+        The Gibbs energy of the reactions
+    K: number
+        The feasible Gibbs energy
+
+    References
+    ----------
+    .. [1] Henry, C. S., Broadbelt, L. J. and Hatzimanikatis, V. (2007). Thermodynamics-based metabolic flux analysis.
+    Biophysical Journal, 92(5), 1792–1805. doi:10.1529/biophysj.106.093138
+    """
     variables = []
     constraints = []
     original_objective = model.objective.expression
