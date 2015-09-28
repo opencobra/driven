@@ -16,21 +16,38 @@ from __future__ import absolute_import, print_function
 
 
 from functools import partial
+from cameo.solver_based_model import SolverBasedModel
 from cameo.util import TimeMachine
 from driven.data_sets.fluxes import FluxConstraints
-from driven.flux_analysis.results import C13BasedFluxDistribution
+from driven.flux_analysis.results import FluxBasedFluxDistribution
 
 
-def fba(model, objective=None, distribution=None, *args, **kwargs):
+def fba(model, objective=None, distribution=None, relax=0.01, *args, **kwargs):
+    """
+    Runs a Flux Balance Analysis using a set of measured fluxes.
+
+    Arguments
+    ---------
+
+    model: SolverBasedModel
+        A constraint-based model
+    distribution: FluxConstraints
+        A set of experimental or computational determined flux constraints
+    relax: float
+        A relax value to make the computation feasible
+    """
+    if not isinstance(model, SolverBasedModel):
+        raise ValueError("Argument model must be instance of SolverBasedModel, not %s" % model.__class__)
     if not isinstance(distribution, FluxConstraints):
-        raise ValueError("Argument distribution must be instance of FluxConstraint, not %s" % distribution.__class__)
+        raise ValueError("Argument distribution must be instance of FluxConstraints, not %s" % distribution.__class__)
 
     with TimeMachine() as tm:
         for reaction_id in distribution:
             reaction = model.reactions.get_by_id(reaction_id)
-            tm(do=partial(setattr, reaction, "upper_bound", distribution[reaction_id][1]),
+            bounds = distribution[reaction_id]
+            tm(do=partial(setattr, reaction, "upper_bound", bounds[1] + bounds[1] * relax),
                undo=partial(setattr, reaction, "upper_bound", reaction.upper_bound))
-            tm(do=partial(setattr, reaction, "lower_bound", distribution[reaction_id][0]),
+            tm(do=partial(setattr, reaction, "lower_bound", bounds[0] - bounds[0] * relax),
                undo=partial(setattr, reaction, "lower_bound", reaction.lower_bound))
 
         if objective is not None:
@@ -39,4 +56,4 @@ def fba(model, objective=None, distribution=None, *args, **kwargs):
 
         solution = model.solve()
 
-    return C13BasedFluxDistribution(solution, distribution)
+    return FluxBasedFluxDistribution(solution.fluxes, distribution)
