@@ -48,7 +48,7 @@ setup(
     long_description="A package for data driven modeling and analysis. It implements novel and state-of-the-art methods"
                      " to integrate 'omics' data in genome-scale methods.",
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 4 - Beta',
         'Topic :: Utilities',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
