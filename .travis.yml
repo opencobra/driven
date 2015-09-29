@@ -30,6 +30,8 @@ install:
 - pip install rednose
 - pip install cython>=0.21
 - pip install ipython[all]
+- pip install ipywidgets
+- pip install cobra==0.4.0b1 --pre
 - pip install .
 script: nosetests
 after_success:
