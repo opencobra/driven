@@ -34,3 +34,5 @@ install:
 script: nosetests
 after_success:
 - coveralls
+notifications:
+  slack: biosustain:8QjrEi8U59rrS3W8CtvOwc5T
