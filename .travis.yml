@@ -32,6 +32,7 @@ install:
 - pip install ipython[all]
 - pip install ipywidgets
 - pip install cobra==0.4.0b1 --pre
+- pip install https://github.com/biosustain/cameo.git@devel
 - pip install .
 script: nosetests
 after_success:
