@@ -33,6 +33,20 @@ def __str__metabolite__(self):
         return self.name
 
 
+def _repr_html_metabolite_(self):
+    return """
+    <table>
+        <tbody>
+            <tr><td><b>Id</b></td><td>%s</td></tr>
+            <tr><td><b>Name</b></td><td>%s</td></tr>
+            <tr><td><b>Formula</b></td><td>%s/td></tr>
+        </tbody>
+    </table>
+    """ % (self.id, self.name, self.formula)
+
+
 Metabolite.__str__ = __str__metabolite__
+Metabolite.__repr__ = __str__metabolite__
+Metabolite._repr_html_ = _repr_html_metabolite_
 Reaction.gene_expression = __gene_to_expression__
 

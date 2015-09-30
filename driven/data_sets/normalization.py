@@ -20,10 +20,9 @@ from sympy import Add, Mul
 from sympy.functions.elementary.miscellaneous import Max, Min
 
 
-def or2min_and2max(reaction, gene_expression):
+def or2min_and2max(reaction, gene_values):
     assert isinstance(reaction, Reaction)
-    assert isinstance(gene_expression, dict)
+    assert isinstance(gene_values, dict)
     expression = reaction.gene_expression()
     expression = expression.replace(Mul, Max).replace(Add, Min)
-    return expression.evalf(subs=gene_expression)
-
+    return expression.evalf(subs=gene_values)

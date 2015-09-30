@@ -29,16 +29,16 @@ import numpy as np
 
 def build_model():
     m = SolverBasedModel("Blazier et al 2012")
-
+    m1_e = Metabolite("M1_e")
     m1 = Metabolite("M1")
     m2 = Metabolite("M2")
     m3 = Metabolite("M3")
+    m4_e = Metabolite("M4_e")
     m4 = Metabolite("M4")
     m5 = Metabolite("M5")
 
     r1 = Reaction("R1")
-    r1.add_metabolites({m1: -1})
-    r1.lower_bound = -10
+    r1.add_metabolites({m1_e: -1, m1: 1})
 
     r2 = Reaction("R2")
     r2.add_metabolites({m1: -1, m2: 1})
@@ -52,8 +52,7 @@ def build_model():
     r4.add_metabolites({m3: -1})
 
     r5 = Reaction("R5")
-    r5.add_metabolites({m4: -1})
-    r5.lower_bound = -10
+    r5.add_metabolites({m4_e: -1, m4: 1})
 
     r6 = Reaction("R6")
     r6.add_metabolites({m4: -1, m5: 1})
@@ -68,6 +67,12 @@ def build_model():
     r8.add_metabolites({m5: -1})
 
     m.add_reactions([r1, r2, r3, r4, r5, r6, r7, r8])
+
+    EX_M1_e = m.add_demand(m1_e, "EX_")
+    EX_M1_e.lower_bound = -10
+
+    EX_M4_e = m.add_demand(m4_e, "EX_")
+    EX_M4_e.lower_bound = -10
 
     m.objective = r4
 

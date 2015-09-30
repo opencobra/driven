@@ -14,7 +14,7 @@
 
 from __future__ import absolute_import, print_function
 
-from driven.flux_analysis.transcriptomics import gimme
+__all__ = ["gimme", "imat"]
 
-all = ["gimme"]
+from driven.flux_analysis.transcriptomics import gimme, imat
 

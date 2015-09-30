@@ -39,6 +39,14 @@ import numpy as np
 import six
 
 
+def _compare_flux_distributions(flux_dist1, flux_dist2, self_key="A", other_key="B"):
+    assert isinstance(flux_dist1, FluxDistributionResult)
+    assert isinstance(flux_dist2, FluxDistributionResult)
+    return FluxDistributionComparison(flux_dist1, flux_dist2, self_key, other_key)
+
+FluxDistributionResult.compare = _compare_flux_distributions
+
+
 class FluxBasedFluxDistribution(FluxDistributionResult):
     def __init__(self, fluxes, objective_value, c13_flux_distribution, *args, **kwargs):
         super(FluxBasedFluxDistribution, self).__init__(fluxes, objective_value, *args, **kwargs)
@@ -72,7 +80,7 @@ class GimmeResult(ExpressionBasedResult):
         data = np.zeros((len(self._fluxes.keys()), 4))
         data[:, 0] = [self._fluxes[r] for r in index]
         data[:, 1] = [self._fba_fluxes[r] for r in index]
-        data[:, 2] = [self.expression.get(r, float("nan")) for r in index]
+        data[:, 2] = [self.expression.get(r, np.nan) for r in index]
         data[:, 3] = [self.reaction_inconsistency_score(r) for r in index]
         return DataFrame(data, index=index, columns=["gimme_fluxes", "fba_fluxes", "expression", "inconsistency_scores"])
 
@@ -124,9 +132,68 @@ class GimmeResult(ExpressionBasedResult):
         display(drop_down)
         viewer("gimme_fluxes")
 
-    def compare(self, other_result, self_key="A", other_key="B"):
-        assert isinstance(other_result, FluxDistributionResult)
-        return FluxDistributionComparison(self, other_result, self_key, other_key)
+
+class IMATResult(ExpressionBasedResult):
+    def __init__(self, fluxes, objective_value, expression, lower_cutoff, higher_cutoff, epsilon, *args, **kwargs):
+        super(IMATResult, self).__init__(fluxes, objective_value, expression, *args, **kwargs)
+        self.lower_cutoff = lower_cutoff
+        self.higher_cutoff = higher_cutoff
+        self.epsilon = epsilon
+
+    @property
+    def highly_express(self):
+        return {r: self._highly_expressed(r) for r in self.fluxes.keys()}
+
+    def _highly_expressed(self, value):
+        if value in self.expression:
+            return self.expression[value] >= self.higher_cutoff
+        else:
+            return np.nan
+
+    @property
+    def lowly_express(self):
+        return {r: self._lowly_expressed(r) for r in self.fluxes.keys()}
+
+    def _lowly_expressed(self, value):
+        if value in self.expression:
+            return self.expression[value] < self.lower_cutoff
+        else:
+            return np.nan
+
+    @property
+    def data_frame(self):
+        index = list(self.fluxes.keys())
+        columns = ["fluxes", "expression", "highly_express", "lowly_expressed"]
+        data = np.zeros((len(self._fluxes.keys()), 4))
+        data[:, 0] = [self.fluxes[r] for r in index]
+        data[:, 1] = [self.expression.get(r, np.nan) for r in index]
+        data[:, 2] = [self._highly_expressed(r) for r in index]
+        data[:, 3] = [self._lowly_expressed(r) for r in index]
+        return DataFrame(data, columns=columns, index=index)
+
+    def display_on_map(self, map_name=None):
+        color_scales = {
+            "fluxes":         [dict(type='min', color="yellow", size=20),
+                               dict(type='value', value=0, color="green", size=7),
+                               dict(type='max', color='blue', size=20)],
+            "expression":     [dict(type='value', value=0, color="green", size=10),
+                               dict(type='max', color='blue', size=20)]
+        }
+
+        normalization_functions = {
+            "fluxes": log_plus_one,
+            "expression": log_plus_one
+        }
+
+        viewer = EscherViewer(self.data_frame, map_name, color_scales, normalization_functions)
+        drop_down = Dropdown()
+        drop_down.options = {
+            "Fluxes": "fluxes",
+            "Expression": "expression"
+        }
+        drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
+        display(drop_down)
+        viewer("fluxes")
 
 
 class FluxDistributionComparison(Result):
@@ -178,7 +245,7 @@ class FluxDistributionComparison(Result):
         value_a = abs(self._fluxes_a[value])
         value_b = abs(self._fluxes_b[value])
         try:
-            return float(np.log2(value_a/value_b))
+            return value_a/value_b
         except ZeroDivisionError:
             return None
 
@@ -228,7 +295,7 @@ class FluxDistributionComparison(Result):
             "manhattan_distance": float,
             "euclidean_distance": float,
             "activity_profile": int,
-            "fold_change": float
+            "fold_change": np.log2
         }
 
         viewer = EscherViewer(self.data_frame, map_name, color_scales, normalization_functions)
@@ -239,7 +306,7 @@ class FluxDistributionComparison(Result):
             "Manhattan Distance": "manhattan_distance",
             "Euclidean Distance": "euclidean_distance",
             "Activity Profile": "activity_profile",
-            "Fold Change": "fold_change"
+            "log2 Fold Change": "fold_change"
         })
         drop_down.value = "fluxes_%s" % self._a_key
         drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
