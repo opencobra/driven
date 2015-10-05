@@ -129,14 +129,20 @@ class ExpressionProfile(object):
 
         return self.expression[i, j]
 
-    def __cmp__(self, other):
+    def __eq__(self, other):
         if not isinstance(other, ExpressionProfile):
             return False
         else:
-            return self.identifiers == other.identifiers and \
-                   self.conditions == other.conditions and \
-                   self._p_values == other._p_values and \
-                   self.expression == other.expression
+            if self._p_values is None and other.p_values is None:
+                return self.identifiers == other.identifiers and \
+                       self.conditions == other.conditions and \
+                       self._p_values == other._p_values and \
+                       (self.expression == other.expression).all()
+            else:
+                return self.identifiers == other.identifiers and \
+                       self.conditions == other.conditions and \
+                       (self._p_values == other._p_values).all() and \
+                       (self.expression == other.expression).all()
 
     def _repr_html_(self):
         return self.data_frame._repr_html_()
