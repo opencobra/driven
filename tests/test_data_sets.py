@@ -44,8 +44,6 @@ class ExpressionProfileTestCase(unittest.TestCase):
         profile = ExpressionProfile(genes, conditions, expression)
         data_frame = profile.data_frame
 
-        print data_frame
-
         new_profile = ExpressionProfile.from_data_frame(data_frame)
 
         self.assertEqual(profile, new_profile)
