@@ -11,10 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import print_function
 import unittest
 import os
 from driven.flux_analysis.transcriptomics import gimme, imat
+
+import six
+
+if six.PY3:
+    def execfile(path, locals, globals):
+        exec(compile(open(path, "rb").read(), path, 'exec'), locals, globals)
 
 CUR_DIR = os.path.dirname(__file__)
 
