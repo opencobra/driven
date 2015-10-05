@@ -30,7 +30,8 @@ else:
         'ipython>=3.0',
         'pyzmq>=14.5',
         'numpy>=1.9.2',
-        'bokeh>=0.9.3'
+        'bokeh>=0.10.0',
+        'lxml>=3.4.4'
     ]
 
 setup(
@@ -43,7 +44,7 @@ setup(
     author_email='jooaaoo@gmail.com',
     description='driven - data-driven constraint-based analysis',
     license='Apache License Version 2.0',
-    keywords='biology metabolism bioinformatics high-throughput',
+    keywords='biology metabolism bioinformatics high-throughput omics',
     url='TBD',
     long_description="A package for data driven modeling and analysis. It implements novel and state-of-the-art methods"
                      " to integrate 'omics' data in genome-scale methods.",
