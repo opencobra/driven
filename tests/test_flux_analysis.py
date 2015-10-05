@@ -18,8 +18,8 @@ from driven.flux_analysis.transcriptomics import gimme, imat
 import six
 
 if six.PY3:
-    def execfile(path, locals, globals):
-        exec(compile(open(path, "rb").read(), path, 'exec'), locals, globals)
+    def execfile(path, globals=None, locals=None):
+        exec(compile(open(path, "rb").read(), path, 'exec'), globals, locals)
 
 CUR_DIR = os.path.dirname(__file__)
 
