@@ -26,12 +26,14 @@ else:
     requirements = [
         'cameo>=0.5',
         'sympy>=0.7.5',
-        'cobra==0.4.0b2',
+        'cobra==0.4.0b4',
         'ipython>=3.0',
         'pyzmq>=14.5',
         'numpy>=1.9.2',
         'bokeh>=0.10.0',
-        'lxml>=3.4.4'
+        'lxml>=3.4.4',
+        'six>=1.9.0',
+        'ipywidgets>=4.0'
     ]
 
 setup(
