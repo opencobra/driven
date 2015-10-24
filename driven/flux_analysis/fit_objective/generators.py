@@ -23,7 +23,7 @@ def zero_one_binary_generator(random, args):
     representation = args.get('representation')
     individual = [0 for _ in representation]
     for i in range(len(representation) - 1):
-        individual[i] = 0 if random.rand() < 0.5 else 1 if individual.count(1) <= max_objectives else 0
+        individual[i] = 0 if random.random() < 0.5 else 1 if individual.count(1) <= max_objectives else 0
 
     return individual
 
@@ -33,6 +33,6 @@ def zero_one_linear_generator(random, args):
     representation = args.get('representation')
     individual = [0 for _ in representation]
     for i in range(len(representation) - 1):
-        individual[i] = 0 if random.rand() < 0.5 else random.rand() if individual.count(1) <= max_objectives else 0
+        individual[i] = 0 if random.random() < 0.5 else random.random() if individual.count(1) <= max_objectives else 0
 
     return individual

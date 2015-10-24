@@ -23,7 +23,7 @@ def zero_one_binary_variator(random, candidates, args):
     for i, c in enumerate(candidates):
         new_candidate = [0 for _ in c]
         for j, v in enumerate(c):
-            new_candidate[j] = v if random.rand() < mutation_rate else 1 if random.rand() < 0.5 else 0
+            new_candidate[j] = v if random.random() < mutation_rate else 1 if random.random() < 0.5 else 0
         new_candidates[i] = new_candidate
 
     return new_candidates
@@ -33,6 +33,6 @@ def zero_one_linear_variator(random, candidates, args):
     mutation_rate = args.get("mutation_rate", 0.15)
     new_candidates = [None for _ in candidates]
     for i, c in enumerate(candidates):
-        new_candidates[i] = [v if random.rand() < mutation_rate else random.rand() for j, v in enumerate(c)]
+        new_candidates[i] = [v if random.random() < mutation_rate else random.random() for j, v in enumerate(c)]
 
     return new_candidates
