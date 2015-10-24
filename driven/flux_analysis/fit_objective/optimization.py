@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from __future__ import absolute_import, print_function
+from random import Random
 
 __all__ = ["FitProfileStrategy"]
 
@@ -47,7 +48,7 @@ def zero_one_bounder(candidate, args):
 class FitProfileStrategy(object):
     def __init__(self, profiles=[], evaluators=[], binary=True, use_reactions=True, model=None,
                  heuristic_method=NSGA2, **kwargs):
-        self._heuristic_method = heuristic_method()
+        self._heuristic_method = heuristic_method(Random())
         self.model = model
 
         if use_reactions:
