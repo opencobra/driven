@@ -77,6 +77,7 @@ class FitProfileStrategy(object):
                                             maximize=maximize,
                                             representation=self.candidates,
                                             bounder=zero_one_bounder,
+                                            evaluator=self._evaluator,
                                             binary=self.binary,
                                             view=view,
                                             **kwargs)
