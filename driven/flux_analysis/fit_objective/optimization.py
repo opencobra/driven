@@ -29,11 +29,11 @@ Mul = sympy.Mul._from_args
 Real = sympy.RealNumber
 
 
-def evaluate(model, reactions, coefficients, profiles, evaluators):
+def evaluate(model, candidates, coefficients, profiles, evaluators, **kwargs):
     if all(map(lambda v : v == 0, coefficients)):
         return Pareto([1000000] + [100000 for _ in profiles])
     else:
-        fitness_list = [f(model, coefficients, reactions, profile) for f, profile in zip(evaluators, profiles)]
+        fitness_list = [f(model, coefficients, candidates, profile, **kwargs) for f, profile in zip(evaluators, profiles)]
         coefficient_sum = sum(coefficients)
         return Pareto([coefficient_sum] + fitness_list)
 
@@ -53,6 +53,8 @@ class FitProfileStrategy(HeuristicOptimization):
         else:
             self.candidates = self.model.metabolites
 
+        self.kwargs = dict(use_reactions=use_reactions)
+        self.kwargs.update(kwargs)
         self.profiles = profiles
         self.evaluators = evaluators
         self.binary = binary
@@ -64,7 +66,8 @@ class FitProfileStrategy(HeuristicOptimization):
             self._generator = zero_one_linear_generator
 
     def _evaluator(self, candidates, args):
-        return [evaluate(self.model, self.candidates, coeffs, self.profiles, self.evaluators) for coeffs in candidates]
+        return [evaluate(self.model, self.candidates, coeffs, self.profiles, self.evaluators, **self.kwargs)
+                for coeffs in candidates]
 
     def run(self, view=config.default_view, maximize=False, **kwargs):
         return super(FitProfileStrategy, self).run(view=view,

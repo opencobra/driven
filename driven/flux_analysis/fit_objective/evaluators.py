@@ -39,13 +39,11 @@ def _essential_profile_assertion_score(actual, expected):
     return float(score)
 
 
-def essential_genes_profile_evaluator(model, coefficients, candidates, use_reactions, essential):
+def essential_genes_profile_evaluator(model, coefficients, candidates, essential, use_reactions=True):
     total = float(len(model.genes))
     with TimeMachine() as tm:
         try:
-            obj = Add([Mul([Real(coeff), react.flux_expression]) for react, coeff in zip(candidates, coefficients)])
-            tm(do=partial(setattr, model, 'objective', obj),
-               undo=partial(setattr, model, 'objective', model.objective.expression))
+            _set_objective(model, coefficients, candidates, use_reactions, tm)
 
             predicted_essential = model.essential_genes()
             actual = {g.id: g in predicted_essential for g in model.genes}
@@ -56,7 +54,7 @@ def essential_genes_profile_evaluator(model, coefficients, candidates, use_react
             return total
 
 
-def essential_reactions_profile_evaluator(model, coefficients, candidates, use_reactions, essential):
+def essential_reactions_profile_evaluator(model, coefficients, candidates, essential, use_reactions=True):
     total = float(len(model.reactions) - len(model.exchanges))
     with TimeMachine() as tm:
         try:
