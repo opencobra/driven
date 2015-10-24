@@ -45,9 +45,13 @@ def zero_one_bounder(candidate, args):
 
 
 class FitProfileStrategy(HeuristicOptimization):
-    def __init__(self, profiles=[], evaluators=[], binary=True, heuristic_method=NSGA2, *args, **kwargs):
+    def __init__(self, profiles=[], evaluators=[], binary=True, use_reactions=True,
+                 heuristic_method=NSGA2, *args, **kwargs):
         HeuristicOptimization.__init__(self, heuristic_method=heuristic_method, *args, **kwargs)
-        self.reactions = [r for r in self.model.exchanges if r.lower_bound >= 0]
+        if use_reactions:
+            self.candidates = [r for r in self.model.exchanges if r.lower_bound >= 0]
+        else:
+            self.candidates = self.model.metabolites
 
         self.profiles = profiles
         self.evaluators = evaluators
@@ -60,12 +64,12 @@ class FitProfileStrategy(HeuristicOptimization):
             self._generator = zero_one_linear_generator
 
     def _evaluator(self, candidates, args):
-        return [evaluate(self.model, self.reactions, coeffs, self.profiles, self.evaluators) for coeffs in candidates]
+        return [evaluate(self.model, self.candidates, coeffs, self.profiles, self.evaluators) for coeffs in candidates]
 
     def run(self, view=config.default_view, maximize=False, **kwargs):
         return super(FitProfileStrategy, self).run(view=view,
                                                    maximize=maximize,
-                                                   _representation=self.reactions,
+                                                   _representation=self.candidates,
                                                    bounder=zero_one_bounder,
                                                    binary=self.binary,
                                                    **kwargs)

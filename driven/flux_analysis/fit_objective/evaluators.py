@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from __future__ import absolute_import, print_function
+from cameo import Reaction
 
 
 __all__ = ["essential_genes_profile_evaluator", "essential_reactions_profile_evaluator"]
@@ -38,13 +39,13 @@ def _essential_profile_assertion_score(actual, expected):
     return float(score)
 
 
-def essential_genes_profile_evaluator(model, coefficients, reactions, essential):
+def essential_genes_profile_evaluator(model, coefficients, candidates, use_reactions, essential):
     total = float(len(model.genes))
     with TimeMachine() as tm:
         try:
-            obj = Add([Mul([Real(coeff), react.flux_expression]) for react, coeff in zip(reactions, coefficients)])
+            obj = Add([Mul([Real(coeff), react.flux_expression]) for react, coeff in zip(candidates, coefficients)])
             tm(do=partial(setattr, model, 'objective', obj),
-               undo=partial(setattr, model, 'objective', model.objective))
+               undo=partial(setattr, model, 'objective', model.objective.expression))
 
             predicted_essential = model.essential_genes()
             actual = {g.id: g in predicted_essential for g in model.genes}
@@ -55,13 +56,11 @@ def essential_genes_profile_evaluator(model, coefficients, reactions, essential)
             return total
 
 
-def essential_reactions_profile_evaluator(model, coefficients, reactions, essential):
+def essential_reactions_profile_evaluator(model, coefficients, candidates, use_reactions, essential):
     total = float(len(model.reactions) - len(model.exchanges))
     with TimeMachine() as tm:
         try:
-            obj = Add([Mul([Real(coeff), react.flux_expression]) for react, coeff in zip(reactions, coefficients)])
-            tm(do=partial(setattr, model, 'objective', obj),
-               undo=partial(setattr, model, 'objective', model.objective))
+            _set_objective(model, coefficients, candidates, use_reactions, tm)
 
             predicted_essential = model.essential_reactions()
             actual = {r.id: r in predicted_essential for r in model.reactions if r not in model.exchanges}
@@ -70,3 +69,17 @@ def essential_reactions_profile_evaluator(model, coefficients, reactions, essent
 
         except SolveError:
             return total
+
+
+def _set_objective(model, coefficients, candidates, use_reactions, tm):
+    if use_reactions:
+        obj = Add([Mul([Real(coeff), react.flux_expression]) for react, coeff in zip(candidates, coefficients)])
+
+    else:
+        obj = Reaction("make_metabolites")
+        obj.add_metabolites({met: coeff for met, coeff in zip(candidates, coefficients) if coeff != 0})
+        tm(do=partial(model.add_reactions, [obj]),
+           undo=partial(model.remove_reactions, [obj], delete=False))
+
+    tm(do=partial(setattr, model, 'objective', obj),
+       undo=partial(setattr, model, 'objective', model.objective.expression))
