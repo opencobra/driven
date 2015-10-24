@@ -15,6 +15,9 @@
 from __future__ import absolute_import, print_function
 
 
+__all__ = ["essential_genes_profile_evaluator", "essential_reactions_profile_evaluator"]
+
+
 from functools import partial
 from cameo.util import TimeMachine
 from cameo.exceptions import SolveError
@@ -39,7 +42,7 @@ def essential_genes_profile_evaluator(model, coefficients, reactions, essential)
     total = float(len(model.genes))
     with TimeMachine() as tm:
         try:
-            obj = Add([Mul([Real(coeff), reaction.variable]) for reaction, coeff in zip(reactions, coefficients)])
+            obj = Add([Mul([Real(coeff), react.flux_expression]) for react, coeff in zip(reactions, coefficients)])
             tm(do=partial(setattr, model, 'objective', obj),
                undo=partial(setattr, model, 'objective', model.objective))
 
@@ -56,7 +59,7 @@ def essential_reactions_profile_evaluator(model, coefficients, reactions, essent
     total = float(len(model.reactions) - len(model.exchanges))
     with TimeMachine() as tm:
         try:
-            obj = Add([Mul([Real(coeff), reaction.variable]) for reaction, coeff in zip(reactions, coefficients)])
+            obj = Add([Mul([Real(coeff), react.flux_expression]) for react, coeff in zip(reactions, coefficients)])
             tm(do=partial(setattr, model, 'objective', obj),
                undo=partial(setattr, model, 'objective', model.objective))
 

@@ -14,6 +14,7 @@
 
 from __future__ import absolute_import, print_function
 
+__all__ = ["FitProfileStrategy"]
 
 from cameo import config
 from cameo.strain_design.heuristic.optimization import HeuristicOptimization
@@ -21,7 +22,6 @@ from inspyred.ec.emo import Pareto, NSGA2
 import sympy
 from driven.flux_analysis.fit_objective.generators import zero_one_binary_generator, zero_one_linear_generator
 from driven.flux_analysis.fit_objective.variators import zero_one_binary_variator, zero_one_linear_variator
-
 
 One = sympy.singleton.S.One
 Add = sympy.Add._from_args
