@@ -243,11 +243,14 @@ class ExpressionProfile(object):
         scatter._yaxis.axis_label = "Expression %s" % condition2
         show(scatter)
 
-    def heat_map(self, conditions=None, identifiers=None, palette="RdBu", n_colors=10, id_map=None):
-        identifiers = self.identifiers[:10] if identifiers is None else identifiers
-        height = 75 * len(identifiers) + 150
+    def heat_map(self, conditions=None, identifiers=None, palette="RdBu",
+                 width=800, height=None, n_colors=10, id_map=None):
+
+        if width is None or height is None:
+            width, height = golden_ratio(width, height)
+
+        identifiers = self.identifiers if identifiers is None else identifiers
         conditions = self.conditions if conditions is None else conditions
-        width = 76 * len(conditions) + 150
         palette = brewer[palette][n_colors]
         data = self.data_frame.loc[identifiers][conditions]
         if id_map is not None:

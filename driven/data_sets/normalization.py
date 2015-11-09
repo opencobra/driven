@@ -25,4 +25,4 @@ def or2min_and2max(reaction, gene_values):
     assert isinstance(gene_values, dict)
     expression = reaction.gene_expression()
     expression = expression.replace(Mul, Max).replace(Add, Min)
-    return expression.evalf(subs=gene_values)
+    return expression.subs(gene_values).evalf()
