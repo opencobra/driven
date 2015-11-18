@@ -116,9 +116,9 @@ class GimmeResult(ExpressionBasedResult):
         }
 
         normalization_functions = {
-            "gimme_fluxes": log_plus_one,
-            "expression": log_plus_one,
-            "inconsistency_scores": log_plus_one
+            "gimme_fluxes": float,
+            "expression": float,
+            "inconsistency_scores": float
         }
 
         viewer = EscherViewer(self.data_frame, map_name, color_scales, normalization_functions)
@@ -181,8 +181,8 @@ class IMATResult(ExpressionBasedResult):
         }
 
         normalization_functions = {
-            "fluxes": log_plus_one,
-            "expression": log_plus_one
+            "fluxes": float,
+            "expression": float
         }
 
         viewer = EscherViewer(self.data_frame, map_name, color_scales, normalization_functions)
@@ -290,8 +290,8 @@ class FluxDistributionComparison(Result):
         }
 
         normalization_functions = {
-            "fluxes_%s" % self._a_key: log_plus_one,
-            "fluxes_%s" % self._b_key: log_plus_one,
+            "fluxes_%s" % self._a_key: float,
+            "fluxes_%s" % self._b_key: float,
             "manhattan_distance": float,
             "euclidean_distance": float,
             "activity_profile": int,
