@@ -128,6 +128,7 @@ class GimmeResult(ExpressionBasedResult):
             "Expression": "expression",
             "Inconsistency Score": "inconsistency_scores"
         }
+        drop_down.default_value = "gimme_fluxes"
         drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
         display(drop_down)
         viewer("gimme_fluxes")
@@ -191,6 +192,7 @@ class IMATResult(ExpressionBasedResult):
             "Fluxes": "fluxes",
             "Expression": "expression"
         }
+        drop_down.default_value = "fluxes"
         drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
         display(drop_down)
         viewer("fluxes")
@@ -308,7 +310,7 @@ class FluxDistributionComparison(Result):
             "Activity Profile": "activity_profile",
             "log2 Fold Change": "fold_change"
         })
-        drop_down.value = "fluxes_%s" % self._a_key
+        drop_down.default_value = "fluxes_%s" % self._a_key
         drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
         display(drop_down)
         viewer("fluxes_%s" % self._a_key)
