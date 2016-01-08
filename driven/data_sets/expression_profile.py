@@ -15,15 +15,13 @@
 from __future__ import absolute_import, print_function
 
 from itertools import combinations
-from bokeh.charts import Histogram, Scatter
-from bokeh._legacy_charts import HeatMap
-from bokeh.plotting import show
-from bokeh.palettes import brewer
 from numpy import ndarray, vectorize
 
 from driven.data_sets.normalization import or2min_and2max
-from pandas import DataFrame
-from driven.vizualization.utils import golden_ratio
+from pandas import DataFrame, melt
+
+from driven.stats import freedman_diaconis
+from driven.vizualization.plotting import plotting
 
 
 class ExpressionProfile(object):
@@ -167,7 +165,6 @@ class ExpressionProfile(object):
                              columns=self.conditions+self.p_value_columns)
 
 
-
     @property
     def p_value_columns(self):
         """
@@ -198,31 +195,19 @@ class ExpressionProfile(object):
         self._p_values = None
 
     def histogram(self, transform=float, bins=100, width=800, height=None, palette='Spectral'):
-        if width is None or height is None:
-            width, height = golden_ratio(width, height)
+        data = melt(self.data_frame, var_name='condition')
+        data['value'] = data['value'].apply(transform)
+        hist = plotting.histogram(data, values='value', groups='condition', bins=bins,
+                                  width=width, height=height, palette=palette,
+                                  title="Histogram of expression values",  legend=True)
 
-        if isinstance(palette, str):
-            n = 3 if len(self.conditions) < 3 else len(self.conditions)
-            palette = brewer[palette][n]
+        plotting.display(hist)
+        return hist
 
-        df = self.data_frame
-        transform = vectorize(transform)
-        values = transform(df.values)
-        df = DataFrame(columns=['exp', 'condition'])
-        for j, c in enumerate(self.conditions):
-            df = df.append(DataFrame({'exp': values[:, j],
-                                      'condition': [c for _ in self.identifiers]}),
-                           ignore_index=True)
-
-        hist = Histogram(df, values='exp', color='condition', bins=bins, legend=True,
-                         width=width, height=height, palette=palette,
-                         title="Histogram of expression values")
-
-        show(hist)
-
-    def scatter(self, condition1=None, condition2=None, width=800, height=None, color="#AFDCEC"):
+    def scatter(self, condition1=None, condition2=None, transform=float, width=800, height=None, color="#AFDCEC"):
         if len(self.conditions) <= 1:
             raise AssertionError("Cannot build a scatter with only one condition")
+
         if condition1 is None:
             condition1 = self.conditions[0]
         elif isinstance(condition1, int):
@@ -234,33 +219,29 @@ class ExpressionProfile(object):
         elif isinstance(condition2, int):
             condition2 = self.conditions[condition2]
 
-        if width is None or height is None:
-            width, height = golden_ratio(width, height)
+        scatter = plotting.scatter(self.data_frame, x=condition1, y=condition2, width=width, height=height, color=color,
+                                   title="Expression values %s vs. %s" % (condition1, condition2),
+                                   xaxis_label="Expression %s" % condition1,
+                                   yaxis_label="Expression %s" % condition2)
 
-        scatter = Scatter(self.data_frame, x=condition1, y=condition2, width=width, height=height, color=color,
-                          title="Expression values %s vs. %s" % (condition1, condition2))
-        scatter._xaxis.axis_label = "Expression %s" % condition1
-        scatter._yaxis.axis_label = "Expression %s" % condition2
-        show(scatter)
+        plotting.display(scatter)
+        return scatter
 
-    def heat_map(self, conditions=None, identifiers=None, palette="RdBu",
-                 width=800, height=None, n_colors=10, id_map=None):
+    def heatmap(self, conditions=None, identifiers=None, transform=float, low="green", mid="yellow", high="blue",
+                width=800, height=None, id_map=None):
 
-        if width is None or height is None:
-            width, height = golden_ratio(width, height)
-
+        id_map = {} if id_map is None else id_map
         identifiers = self.identifiers if identifiers is None else identifiers
         conditions = self.conditions if conditions is None else conditions
-        palette = brewer[palette][n_colors]
-        data = self.data_frame.loc[identifiers][conditions]
-        if id_map is not None:
-            id_map = dict(id_map)
-            index = [id_map.get(i, i) for i in data.index]
-            data.index = index
-            data.sort_index()
+        data = self.data_frame[conditions]
+        data['y'] = [id_map.get(i, i) for i in identifiers]
+        data = melt(data, id_vars=['y'], var_name='x')
 
-        heat_map = HeatMap(data, palette=palette, width=width, height=height)
-        show(heat_map)
+        heatmap = plotting.heatmap(data, y='y', x='x', values='value', width=width, height=height,
+                                   max_color=high, min_color=low, mid_color=mid, title='Expression profile heatmap')
+
+        plotting.display(heatmap)
+        return heatmap
 
     def to_dict(self, condition):
         """
@@ -307,3 +288,19 @@ class ExpressionProfile(object):
                     diff[gene].append(0)
 
         return diff
+
+    def minmax(self, condition=None):
+        if condition is None:
+            values = self[:, :]
+        else:
+            values = self[:, condition]
+        return min(values), max(values)
+
+    def binwidth(self, condition=None):
+        if condition is None:
+            values = self[:, :]
+        else:
+            values = self[:, condition]
+
+        values = self[:, condition]
+        return freedman_diaconis(values)
