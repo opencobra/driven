@@ -13,30 +13,15 @@
 # limitations under the License.
 
 from __future__ import absolute_import, print_function
-from collections import OrderedDict
+
+import six
+import numpy as np
+
 from math import sqrt
 
-from IPython.core.display import display
-
-import warnings
 from cameo.core.result import Result
-from driven.generic.normalization import log_plus_one
-from driven.vizualization.escher_viewer import EscherViewer
-
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            from IPython.html.widgets import Dropdown
-    except ImportError:
-        from ipywidgets import Dropdown
-
-
 from cameo.flux_analysis.simulation import FluxDistributionResult
 from pandas import DataFrame
-import numpy as np
-import six
 
 
 def _compare_flux_distributions(flux_dist1, flux_dist2, self_key="A", other_key="B"):
@@ -100,38 +85,9 @@ class GimmeResult(ExpressionBasedResult):
 
     def trim_model(self, model, tm=None):
         for r_id, flux in six.iteritems(self.fluxes):
-            if abs(flux) == 0 and self.expression.get(r_id, self.cutoff+1) < self.cutoff:
+            expression = self.expression.get(r_id, self.cutoff+1)
+            if abs(flux) == 0 and expression < self.cutoff and self.reaction_inconsistency_score(r_id) <= 0:
                 model.reactions.get_by_id(r_id).knock_out(tm)
-
-    def display_on_map(self, map_name=None):
-        color_scales = {
-            "gimme_fluxes":         [dict(type='min', color="yellow", size=20),
-                                     dict(type='value', value=0, color="green", size=7),
-                                     dict(type='max', color='blue', size=20)],
-            "expression":           [dict(type='value', value=log_plus_one(self.cutoff), color="green", size=10),
-                                     dict(type='max', color='blue', size=20),
-                                     dict(type='min', color='yellow', size=5)],
-            "inconsistency_scores": [dict(type='value', value=0, color="yellow", size=10),
-                                     dict(type='max', color='green', size=20)]
-        }
-
-        normalization_functions = {
-            "gimme_fluxes": float,
-            "expression": float,
-            "inconsistency_scores": float
-        }
-
-        viewer = EscherViewer(self.data_frame, map_name, color_scales, normalization_functions)
-        drop_down = Dropdown()
-        drop_down.options = {
-            "Fluxes": "gimme_fluxes",
-            "Expression": "expression",
-            "Inconsistency Score": "inconsistency_scores"
-        }
-        drop_down.default_value = "gimme_fluxes"
-        drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
-        display(drop_down)
-        viewer("gimme_fluxes")
 
 
 class IMATResult(ExpressionBasedResult):
@@ -171,31 +127,6 @@ class IMATResult(ExpressionBasedResult):
         data[:, 2] = [self._highly_expressed(r) for r in index]
         data[:, 3] = [self._lowly_expressed(r) for r in index]
         return DataFrame(data, columns=columns, index=index)
-
-    def display_on_map(self, map_name=None):
-        color_scales = {
-            "fluxes":         [dict(type='min', color="yellow", size=20),
-                               dict(type='value', value=0, color="green", size=7),
-                               dict(type='max', color='blue', size=20)],
-            "expression":     [dict(type='value', value=0, color="green", size=10),
-                               dict(type='max', color='blue', size=20)]
-        }
-
-        normalization_functions = {
-            "fluxes": float,
-            "expression": float
-        }
-
-        viewer = EscherViewer(self.data_frame, map_name, color_scales, normalization_functions)
-        drop_down = Dropdown()
-        drop_down.options = {
-            "Fluxes": "fluxes",
-            "Expression": "expression"
-        }
-        drop_down.default_value = "fluxes"
-        drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
-        display(drop_down)
-        viewer("fluxes")
 
 
 class FluxDistributionComparison(Result):
@@ -265,52 +196,3 @@ class FluxDistributionComparison(Result):
         data[:, 4] = [self._activity(r) for r in index]
         data[:, 5] = [self._fold_change(r) for r in index]
         return DataFrame(data, index=index, columns=columns)
-
-    def plot(self, grid=None, width=None, height=None, title=None):
-        pass
-
-    def display_on_map(self, map_name):
-        color_scales = {
-            "fluxes_%s" % self._a_key: [dict(type='min', color="yellow", size=20),
-                                        dict(type='value', value=0, color="blue", size=7),
-                                        dict(type='max', color='green', size=20)],
-            "fluxes_%s" % self._b_key: [dict(type='min', color="yellow", size=20),
-                                        dict(type='value', value=0, color="blue", size=7),
-                                        dict(type='max', color='green', size=20)],
-            "manhattan_distance":      [dict(type='min', color="yellow", size=20),
-                                        dict(type='value', value=0, color="blue", size=7),
-                                        dict(type='max', color='green', size=20)],
-            "euclidean_distance":      [dict(type='min', color="yellow", size=20),
-                                        dict(type='value', value=0, color="blue", size=7),
-                                        dict(type='max', color='green', size=20)],
-            "activity_profile":        [dict(type='value', value=-1, color="yellow", size=10),
-                                        dict(type='value', value=0, color="green", size=10),
-                                        dict(type='value', value=1, color='blue', size=10)],
-            "fold_change":             [dict(type='min', color="yellow", size=20),
-                                        dict(type='value', value=0, color="blue", size=7),
-                                        dict(type='max', color='green', size=20)]
-        }
-
-        normalization_functions = {
-            "fluxes_%s" % self._a_key: float,
-            "fluxes_%s" % self._b_key: float,
-            "manhattan_distance": float,
-            "euclidean_distance": float,
-            "activity_profile": int,
-            "fold_change": np.log2
-        }
-
-        viewer = EscherViewer(self.data_frame, map_name, color_scales, normalization_functions)
-        drop_down = Dropdown()
-        drop_down.options = OrderedDict({
-            "Flux Distribution %s" % self._a_key: "fluxes_%s" % self._a_key,
-            "Flux Distribution %s" % self._b_key: "fluxes_%s" % self._b_key,
-            "Manhattan Distance": "manhattan_distance",
-            "Euclidean Distance": "euclidean_distance",
-            "Activity Profile": "activity_profile",
-            "log2 Fold Change": "fold_change"
-        })
-        drop_down.default_value = "fluxes_%s" % self._a_key
-        drop_down.on_trait_change(lambda x: viewer(drop_down.get_state("value")["value"]))
-        display(drop_down)
-        viewer("fluxes_%s" % self._a_key)
