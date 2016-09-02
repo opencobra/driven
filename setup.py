@@ -24,21 +24,22 @@ if on_rtd:
     requirements = ["numpydoc>=0.5"]
 else:
     requirements = [
-        'cameo>=0.5',
+        'cameo>=0.7',
         'sympy>=0.7.5',
-        'cobra==0.4.0b4',
-        'ipython>=3.0',
+        'cobra>=0.4',
+        'ipython>=4.0',
         'pyzmq>=14.5',
         'numpy>=1.9.2',
-        'bokeh>=0.10.0',
+        'bokeh>=0.11.0',
         'lxml>=3.4.4',
         'six>=1.9.0',
-        'ipywidgets>=4.0'
+        'ipywidgets>=4.0',
+        'pandas>=0.16.2'
     ]
 
 setup(
     name='driven',
-    version="0.0.1b1",
+    version="0.0.2",
     packages=find_packages(),
     install_requires=requirements,
     include_package_data=True,
@@ -47,8 +48,8 @@ setup(
     description='driven - data-driven constraint-based analysis',
     license='Apache License Version 2.0',
     keywords='biology metabolism bioinformatics high-throughput omics',
-    url='TBD',
-    long_description="A package for data driven modeling and analysis. It implements novel and state-of-the-art methods"
+    url='http://driven.bio',
+    long_description="A package for data-driven modeling and analysis. It implements novel and state-of-the-art methods"
                      " to integrate 'omics' data in genome-scale methods.",
     classifiers=[
         'Development Status :: 4 - Beta',
