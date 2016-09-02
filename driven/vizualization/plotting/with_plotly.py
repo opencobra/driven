@@ -16,6 +16,7 @@ from warnings import warn
 from driven.vizualization.plotting import Plotter
 from plotly.graph_objs import Scatter
 
+
 class PlotlyPlotter(Plotter):
 
     def __init__(self, **defaults):
@@ -24,11 +25,11 @@ class PlotlyPlotter(Plotter):
 
     def scatter(self, dataframe, x=None, y=None, width=None, height=None, color=None, title='Scatter', xaxis_label=None,
                 yaxis_label=None):
-        scatter = Scatter(
-            x = random_x,
-            y = random_y,
-    mode = 'markers'
-)
+
+        scatter = Scatter(x=dataframe[x],
+                          y=dataframe[y],
+                          mode='markers')
+
 
     def histogram(self, dataframe, bins=100, width=None, height=None, palette=None, title='Histogram', values=None,
                   groups=None, legend=True):

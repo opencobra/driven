@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import absolute_import
+
 import six
 
 from driven.vizualization.plotting.abstract import Plotter
@@ -21,17 +23,17 @@ _engine = None
 _engines = {}
 
 try:
-    from with_bokeh import BokehPlotter
+    from driven.vizualization.plotting.with_bokeh import BokehPlotter
     _engine = BokehPlotter()
     _engines["bokeh"] = BokehPlotter
 except ImportError:
     pass
 
 try:
-    from with_ggplot import GGPlotPlotter
+    from driven.vizualization.plotting.with_ggplot import GGPlotPlotter
     _engine = GGPlotPlotter() if _engine is None else _engine
     _engines["ggplot"] = GGPlotPlotter
-except ImportError:
+except (ImportError, RuntimeError):
     pass
 
 

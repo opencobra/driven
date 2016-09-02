@@ -40,7 +40,7 @@ class Plotter(object):
                 max_color=None, min_color=None, mid_color=None, title='Heatmap'):
         raise NotImplementedError
 
-    def line(self, dataframe, x=None, y=None, width=None, height=None, title="Line"):
+    def line(self, dataframe, x=None, y=None, width=None, height=None, groups=None, title="Line"):
         raise NotImplementedError
 
     @staticmethod

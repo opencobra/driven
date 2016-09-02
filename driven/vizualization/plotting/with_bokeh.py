@@ -15,9 +15,10 @@
 import collections
 import six
 
-from bokeh.charts import Histogram, Scatter
+from bokeh.charts import Histogram, Scatter, HeatMap, Line
 from bokeh.io import show
 from bokeh.palettes import brewer
+
 from driven.vizualization.plotting.abstract import Plotter
 
 
@@ -34,7 +35,7 @@ class BokehPlotter(Plotter):
         else:
             raise ValueError("Invalid palette %s" % palette)
 
-    def histogram(self, dataframe, bins=100, width=None, height=None, palette=None, title='Histogram', values=None,
+    def histogram(self, dataframe, bins=None, width=None, height=None, palette=None, title='Histogram', values=None,
                   groups=None, legend=True):
         palette = self.__default_options__.get('palette', None) if palette is None else palette
         width = self.__default_options__.get('width', None) if width is None else width
@@ -67,9 +68,38 @@ class BokehPlotter(Plotter):
 
         return scatter
 
-    def heatmap(self, dataframe, y=None, x=None, values=None, width=None, height=None,
-                max_color=None, min_color=None, mid_color=None, title='Heatmap'):
-        pass
+    def heatmap(self, dataframe, y=None, x=None, values=None, width=None, height=None, palette=None,
+                max_color=None, min_color=None, mid_color=None, title='Heatmap', xaxis_label=None, yaxis_label=None):
+
+        palette = self.__default_options__.get('palette', None) if palette is None else palette
+        width = self.__default_options__.get('width', None) if width is None else width
+
+        width, height = self._width_height(width, height)
+
+        heatmap = HeatMap(dataframe, x=x, y=y, values=values, width=width, height=height, palette=palette, title=title)
+        if xaxis_label:
+            heatmap._xaxis.axis_label = xaxis_label
+        if yaxis_label:
+            heatmap._yaxis.axis_label = yaxis_label
+
+        return heatmap
+
+    def line(self, dataframe, x=None, y=None, width=None, height=None, groups=None, palette=None, title="Line",
+             xaxis_label=None, yaxis_label=None):
+        palette = self.__default_options__.get('palette', None) if palette is None else palette
+        width = self.__default_options__.get('width', None) if width is None else width
+
+        width, height = self._width_height(width, height)
+
+        line = Line(dataframe, x=x, y=y, color=groups, width=width, height=height, palette=palette, title=title,
+                    legend=True)
+
+        if xaxis_label:
+            line._xaxis.axis_label = xaxis_label
+        if yaxis_label:
+            line._yaxis.axis_label = yaxis_label
+
+        return line
 
     @classmethod
     def display(cls, plot):
