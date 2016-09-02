@@ -15,12 +15,13 @@
 from __future__ import absolute_import, print_function
 
 from itertools import combinations
-from numpy import ndarray, vectorize
+from numpy import ndarray
 
 from driven.data_sets.normalization import or2min_and2max
 from pandas import DataFrame, melt
 
 from driven.stats import freedman_diaconis
+from driven.utils import get_common_start
 from driven.vizualization.plotting import plotting
 
 
@@ -44,7 +45,7 @@ class ExpressionProfile(object):
         The p-values between conditions.
     """
     @classmethod
-    def from_csv(cls, file_path):
+    def from_csv(cls, file_path, sep=",", replicas=None):
         """
         Reads and expression profile from a Comma Separated Values (CSV) file.
 
@@ -52,6 +53,10 @@ class ExpressionProfile(object):
         ----------
         file_path: str
             The path to load.
+        sep: str
+            Default is ","
+        replicas: int
+            number of replicas. It uses the median of the replicas.
 
         Returns
         -------
@@ -59,8 +64,14 @@ class ExpressionProfile(object):
             An expression profile built from the file.
 
         """
-        data_frame = DataFrame.from_csv(file_path)
-        return cls.from_data_frame(data_frame)
+        data = DataFrame.from_csv(file_path, sep=sep)
+        if replicas:
+            columns = data.columns
+            data = DataFrame([data[columns[i:i+replicas]].median(axis=1) for i in
+                              range(0, len(columns), replicas)]).transpose()
+            data.columns = [get_common_start(*columns[i:i+replicas].tolist()) for i in
+                            range(0, len(columns), replicas)]
+        return cls.from_data_frame(data)
 
     @classmethod
     def from_data_frame(cls, data_frame):
@@ -164,7 +175,6 @@ class ExpressionProfile(object):
             return DataFrame(self.expression+self.p_values, index=self.identifiers,
                              columns=self.conditions+self.p_value_columns)
 
-
     @property
     def p_value_columns(self):
         """
@@ -194,9 +204,18 @@ class ExpressionProfile(object):
     def p_values(self):
         self._p_values = None
 
-    def histogram(self, transform=float, bins=100, width=800, height=None, palette='Spectral'):
-        data = melt(self.data_frame, var_name='condition')
-        data['value'] = data['value'].apply(transform)
+    def histogram(self,  conditions=None, transform=None, filter=None, bins=None,
+                  width=800, height=None, palette='Spectral',):
+
+        if conditions is None:
+            conditions = self.conditions
+
+        data = melt(self.data_frame[conditions], var_name='condition')
+
+        if filter:
+            data = data.query(filter)
+        if transform:
+            data['value'] = data['value'].apply(transform)
         hist = plotting.histogram(data, values='value', groups='condition', bins=bins,
                                   width=width, height=height, palette=palette,
                                   title="Histogram of expression values",  legend=True)
@@ -296,11 +315,16 @@ class ExpressionProfile(object):
             values = self[:, condition]
         return min(values), max(values)
 
-    def binwidth(self, condition=None):
+    def bin_width(self, condition=None, min_val=None, max_val=None):
         if condition is None:
             values = self[:, :]
         else:
             values = self[:, condition]
 
-        values = self[:, condition]
+        if min_val:
+            values = values[values >= min_val]
+        if max_val:
+            values = values[values <= max_val]
+
+        values = values[:, condition]
         return freedman_diaconis(values)
