@@ -29,10 +29,9 @@ install:
 - pip install redis
 - pip install rednose
 - pip install cython>=0.21
-- pip install ipython[all]
+- pip install jupyter
 - pip install ipywidgets
-- pip install cobra==0.4.0b1 --pre
-- pip install git+https://github.com/biosustain/cameo.git@devel#egg=cameo
+- pip install swiglpk
 - pip install .
 script: nosetests
 after_success:
