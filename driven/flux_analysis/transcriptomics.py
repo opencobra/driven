@@ -72,7 +72,7 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
     assert isinstance(cutoff, numbers.Number)
 
     objective = model.objective if objective is None else objective
-    objective_dist = fba(model, objective) if objective_dist is None else objective_dist
+    objective_dist = fba(model, objective=objective) if objective_dist is None else objective_dist
 
     assert isinstance(objective_dist, FluxDistributionResult)
 
@@ -90,7 +90,7 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
     not_measured_value = cutoff if not_measured_value is None else not_measured_value
 
     reaction_profile = expression_profile.to_reaction_dict(condition, model, not_measured_value, normalization)
-    coefficients = {r: cutoff - exp if cutoff > exp else 0 for r, exp in six.iteritems(reaction_profile)}
+    coefficients = {r: cutoff- exp if cutoff > exp else 0 for r, exp in six.iteritems(reaction_profile)}
 
     for rid, coefficient in six.iteritems(coefficients):
         reaction = model.reactions.get_by_id(rid)
@@ -101,8 +101,8 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
         gimme_objective = model.solver.interface.Objective(Add(*objective_terms), direction="min")
         tm(do=partial(setattr, model, "objective", gimme_objective),
            undo=partial(setattr, model, "objective", model.objective.expression))
-        tm(do=partial(model.solver._add_constraint, fix_obj_constraint),
-           undo=partial(model.solver._remove_constraints, [fix_obj_constraint]))
+        tm(do=partial(model.solver.add, fix_obj_constraint),
+           undo=partial(model.solver.remove, [fix_obj_constraint]))
         solution = model.solve()
         return GimmeResult(solution.fluxes, solution.f, objective_dist.fluxes, reaction_profile, cutoff)
 
@@ -186,14 +186,14 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
                 constraints.extend([pos_constraint, neg_constraint])
 
         for variable in x_variables:
-            model.solver._add_variable(variable)
+            model.solver.add(variable)
 
         for variables in y_variables:
-            model.solver._add_variable(variables[0])
-            model.solver._add_variable(variables[1])
+            model.solver.add(variables[0])
+            model.solver.add(variables[1])
 
         for constraint in constraints:
-            model.solver._add_constraint(constraint)
+            model.solver.add(constraint)
 
         objective = model.solver.interface.Objective(Add(*[(y[0] + y[1]) for y in y_variables]) + Add(*x_variables),
                                                      direction="max")
@@ -205,9 +205,9 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
             return IMATResult(solution.fluxes, solution.f, reaction_profile, low_cutoff, high_cutoff, epsilon)
 
     finally:
-        model.solver._remove_variables([var for var in x_variables if var in model.solver.variables])
-        model.solver._remove_variables([var for pair in y_variables for var in pair if var in model.solver.variables])
-        model.solver._remove_constraints([const for const in constraints if const in model.solver.constraints])
+        model.solver.remove([var for var in x_variables if var in model.solver.variables])
+        model.solver.remove([var for pair in y_variables for var in pair if var in model.solver.variables])
+        model.solver.remove([const for const in constraints if const in model.solver.constraints])
 
 
 def made(model, objective=None, *args, **kwargs):
