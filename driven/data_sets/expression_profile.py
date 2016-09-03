@@ -205,7 +205,7 @@ class ExpressionProfile(object):
         self._p_values = None
 
     def histogram(self,  conditions=None, transform=None, filter=None, bins=None,
-                  width=800, height=None, palette='Spectral',):
+                  width=800, height=None, palette='Spectral'):
 
         if conditions is None:
             conditions = self.conditions
@@ -238,7 +238,14 @@ class ExpressionProfile(object):
         elif isinstance(condition2, int):
             condition2 = self.conditions[condition2]
 
-        scatter = plotting.scatter(self.data_frame, x=condition1, y=condition2, width=width, height=height, color=color,
+        if transform:
+            data = self.data_frame.applymap(transform)
+        else:
+            data = self.data_frame
+
+        data = data.reset_index()
+        scatter = plotting.scatter(data, x=condition1, y=condition2, width=width, height=height,
+                                   color=color, label='index',
                                    title="Expression values %s vs. %s" % (condition1, condition2),
                                    xaxis_label="Expression %s" % condition1,
                                    yaxis_label="Expression %s" % condition2)
@@ -246,7 +253,7 @@ class ExpressionProfile(object):
         plotting.display(scatter)
         return scatter
 
-    def heatmap(self, conditions=None, identifiers=None, transform=float, low="green", mid="yellow", high="blue",
+    def heatmap(self, conditions=None, identifiers=None, transform=None, low="green", mid="yellow", high="blue",
                 width=800, height=None, id_map=None):
 
         id_map = {} if id_map is None else id_map
@@ -255,12 +262,28 @@ class ExpressionProfile(object):
         data = self.data_frame[conditions]
         data['y'] = [id_map.get(i, i) for i in identifiers]
         data = melt(data, id_vars=['y'], var_name='x')
+        if transform:
+            data['value'] = data.values.apply(transform)
 
         heatmap = plotting.heatmap(data, y='y', x='x', values='value', width=width, height=height,
                                    max_color=high, min_color=low, mid_color=mid, title='Expression profile heatmap')
 
         plotting.display(heatmap)
         return heatmap
+
+    def boxplot(self, conditions=None, transform=None, width=800, height=None, palette='Spectral'):
+        if conditions is None:
+            conditions = self.conditions
+
+        data = melt(self.data_frame[conditions], var_name='condition')
+
+        if transform:
+            data['value'] = data['value'].apply(transform)
+        hist = plotting.boxplot(data, values='value', groups='condition', width=width, height=height, palette=palette,
+                                title="Box plot of expression values", legend=True)
+
+        plotting.display(hist)
+        return hist
 
     def to_dict(self, condition):
         """
