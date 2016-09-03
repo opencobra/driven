@@ -15,11 +15,15 @@
 import collections
 import six
 
-from bokeh.charts import Histogram, Scatter, HeatMap, Line
+from bokeh.charts import Histogram, Scatter, HeatMap, Line, BoxPlot
+from bokeh.models import HoverTool, GlyphRenderer
 from bokeh.io import show
 from bokeh.palettes import brewer
 
 from driven.vizualization.plotting.abstract import Plotter
+
+
+TOOLS = 'pan,box_zoom,wheel_zoom,resize,reset,save'
 
 
 class BokehPlotter(Plotter):
@@ -54,13 +58,21 @@ class BokehPlotter(Plotter):
         return histogram
 
     def scatter(self, dataframe, x=None, y=None, width=None, height=None, color=None, title=None,
-                xaxis_label=None, yaxis_label=None):
+                xaxis_label=None, yaxis_label=None, label=None):
         color = self.__default_options__.get('palette', None) if color is None else color
         width = self.__default_options__.get('width', None) if width is None else width
 
         width, height = self._width_height(width, height)
 
-        scatter = Scatter(dataframe, x=x, y=y, width=width, height=height, color=color, title=title)
+        scatter = Scatter(dataframe, x=x, y=y, width=width, height=height, color=color, title=title,
+                          tools=TOOLS + ',hover' if label else '')
+
+        if label:
+            hover = scatter.select_one(dict(type=HoverTool))
+            hover.tooltips = [("Id", "@%s" % label)]
+            renderer = scatter.select_one(dict(type=GlyphRenderer))
+            renderer.data_source.data[label] = dataframe[label].tolist()
+
         if xaxis_label:
             scatter._xaxis.axis_label = xaxis_label
         if yaxis_label:
@@ -100,6 +112,25 @@ class BokehPlotter(Plotter):
             line._yaxis.axis_label = yaxis_label
 
         return line
+
+    def boxplot(self, dataframe, values='value', groups=None, width=None, height=None, palette=None,
+                title="BoxPlot", legend=True):
+
+        palette = self.__default_options__.get('palette', None) if palette is None else palette
+        width = self.__default_options__.get('width', None) if width is None else width
+
+        if values:
+            unique_values = dataframe[groups].unique()
+            palette = self._palette(palette, len(unique_values))
+        else:
+            palette = None
+
+        width, height = self._width_height(width, height)
+
+        boxplot = BoxPlot(dataframe, values=values, label=groups, color=groups, legend=True, width=width,
+                          height=height, palette=palette, title=title)
+
+        return boxplot
 
     @classmethod
     def display(cls, plot):

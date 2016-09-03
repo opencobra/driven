@@ -27,13 +27,12 @@ class Plotter(object):
     def _palette(self, palette, *args, **kwargs):
         raise NotImplementedError
 
-    def histogram(self, dataframe, bins=100, width=None, height=None,
-                  palette=None, title='Histogram', values=None, groups=None,
-                  legend=True):
+    def histogram(self, dataframe, bins=100, width=None, height=None, palette=None, title='Histogram', values=None,
+                  groups=None, legend=True):
         raise NotImplementedError
 
     def scatter(self, dataframe, x=None, y=None, width=None, height=None, color=None, title='Scatter',
-                xaxis_label=None, yaxis_label=None):
+                xaxis_label=None, yaxis_label=None, label=None):
         raise NotImplementedError
 
     def heatmap(self, dataframe, y=None, x=None, values=None, width=None, height=None,
@@ -41,6 +40,10 @@ class Plotter(object):
         raise NotImplementedError
 
     def line(self, dataframe, x=None, y=None, width=None, height=None, groups=None, title="Line"):
+        raise NotImplementedError
+
+    def boxplot(self, dataframe, values='value', groups=None, width=None, height=None, palette=None,
+                title="BoxPlot", legend=True):
         raise NotImplementedError
 
     @staticmethod

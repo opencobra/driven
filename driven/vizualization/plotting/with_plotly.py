@@ -24,11 +24,14 @@ class PlotlyPlotter(Plotter):
         super(PlotlyPlotter, self).__init__(**defaults)
 
     def scatter(self, dataframe, x=None, y=None, width=None, height=None, color=None, title='Scatter', xaxis_label=None,
-                yaxis_label=None):
+                yaxis_label=None, label=None):
 
         scatter = Scatter(x=dataframe[x],
                           y=dataframe[y],
                           mode='markers')
+
+        if label:
+            scatter['text'] = dataframe[label]
 
 
     def histogram(self, dataframe, bins=100, width=None, height=None, palette=None, title='Histogram', values=None,

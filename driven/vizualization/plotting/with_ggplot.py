@@ -47,7 +47,7 @@ class GGPlotPlotter(Plotter):
                scale_y_continuous(name="Count (%s)" % values)
 
     def scatter(self, dataframe, x=None, y=None, width=None, height=None, color=None, title='Scatter', xaxis_label=None,
-                yaxis_label=None):
+                yaxis_label=None, label=None):
         color = self.__default_options__.get('palette', None) if color is None else color
         width = self.__default_options__.get('width', None) if width is None else width
 
