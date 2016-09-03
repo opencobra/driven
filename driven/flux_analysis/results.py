@@ -15,21 +15,22 @@
 from __future__ import absolute_import, print_function
 
 import six
-import numpy as np
 
 from math import sqrt
+from numpy import log2, nan, zeros
 
 from cameo.core.result import Result
 from cameo.flux_analysis.simulation import FluxDistributionResult
+
 from pandas import DataFrame
 
 
 def _compare_flux_distributions(flux_dist1, flux_dist2, self_key="A", other_key="B"):
     assert isinstance(flux_dist1, FluxDistributionResult)
     assert isinstance(flux_dist2, FluxDistributionResult)
-    return FluxDistributionComparison(flux_dist1, flux_dist2, self_key, other_key)
+    return FluxDistributionDiff(flux_dist1, flux_dist2, self_key, other_key)
 
-FluxDistributionResult.compare = _compare_flux_distributions
+FluxDistributionResult.__sub__ = lambda self, other: _compare_flux_distributions(self, other)
 
 
 class FluxBasedFluxDistribution(FluxDistributionResult):
@@ -40,10 +41,10 @@ class FluxBasedFluxDistribution(FluxDistributionResult):
     @property
     def data_frame(self):
         index = list(self.fluxes.keys())
-        data = np.zeros((len(self._fluxes.keys()), 3))
+        data = zeros((len(self._fluxes.keys()), 3))
         data[:, 0] = [self._fluxes[r] for r in index]
-        data[:, 1] = [self._c13_fluxes.get(r, [np.nan, np.nan])[0] for r in index]
-        data[:, 2] = [self._c13_fluxes.get(r, [np.nan, np.nan])[1] for r in index]
+        data[:, 1] = [self._c13_fluxes.get(r, [nan, nan])[0] for r in index]
+        data[:, 2] = [self._c13_fluxes.get(r, [nan, nan])[1] for r in index]
         return DataFrame(data, index=index, columns=["fluxes", "c13_lower_limit", "c13_upper_limit"])
 
 
@@ -62,10 +63,10 @@ class GimmeResult(ExpressionBasedResult):
     @property
     def data_frame(self):
         index = list(self.fluxes.keys())
-        data = np.zeros((len(self._fluxes.keys()), 4))
+        data = zeros((len(self._fluxes.keys()), 4))
         data[:, 0] = [self._fluxes[r] for r in index]
         data[:, 1] = [self._fba_fluxes[r] for r in index]
-        data[:, 2] = [self.expression.get(r, np.nan) for r in index]
+        data[:, 2] = [self.expression.get(r, nan) for r in index]
         data[:, 3] = [self.reaction_inconsistency_score(r) for r in index]
         return DataFrame(data, index=index, columns=["gimme_fluxes", "fba_fluxes", "expression", "inconsistency_scores"])
 
@@ -105,7 +106,7 @@ class IMATResult(ExpressionBasedResult):
         if value in self.expression:
             return self.expression[value] >= self.higher_cutoff
         else:
-            return np.nan
+            return nan
 
     @property
     def lowly_express(self):
@@ -115,23 +116,23 @@ class IMATResult(ExpressionBasedResult):
         if value in self.expression:
             return self.expression[value] < self.lower_cutoff
         else:
-            return np.nan
+            return nan
 
     @property
     def data_frame(self):
         index = list(self.fluxes.keys())
         columns = ["fluxes", "expression", "highly_express", "lowly_expressed"]
-        data = np.zeros((len(self._fluxes.keys()), 4))
+        data = zeros((len(self._fluxes.keys()), 4))
         data[:, 0] = [self.fluxes[r] for r in index]
-        data[:, 1] = [self.expression.get(r, np.nan) for r in index]
+        data[:, 1] = [self.expression.get(r, nan) for r in index]
         data[:, 2] = [self._highly_expressed(r) for r in index]
         data[:, 3] = [self._lowly_expressed(r) for r in index]
         return DataFrame(data, columns=columns, index=index)
 
 
-class FluxDistributionComparison(Result):
+class FluxDistributionDiff(Result):
     def __init__(self, flux_dist_a, flux_dist_b, a_key="A", b_key="B", *args, **kwargs):
-        super(FluxDistributionComparison, self).__init__(*args, **kwargs)
+        super(FluxDistributionDiff, self).__init__(*args, **kwargs)
         assert isinstance(flux_dist_a, FluxDistributionResult)
         assert isinstance(flux_dist_b, FluxDistributionResult)
         assert all([rid in flux_dist_a.fluxes for rid in flux_dist_b.fluxes]) and \
@@ -148,14 +149,14 @@ class FluxDistributionComparison(Result):
 
     @property
     def manhattan_distance(self):
-        return {rid: self._manhattan_distance(rid) for rid in self._fluxes_a.keys()}
+        return sum(self._manhattan_distance(rid) for rid in self._fluxes_a.keys())
 
     def _euclidean_distance(self, value):
-        return sqrt((self._fluxes_a[value] - self._fluxes_b[value])**2)
+        return (self._fluxes_a[value] - self._fluxes_b[value])**2
 
     @property
     def euclidean_distance(self):
-        return {rid: self._euclidean_distance(rid) for rid in self._fluxes_a.keys()}
+        return sqrt(sum(self._euclidean_distance(rid) for rid in self._fluxes_a.keys()))
 
     def _activity(self, value, threshold=1e-6):
         value_a = abs(self._fluxes_a[value])
@@ -175,10 +176,10 @@ class FluxDistributionComparison(Result):
         return {rid: self._activity(rid) for rid in self._fluxes_a.keys()}
 
     def _fold_change(self, value):
-        value_a = abs(self._fluxes_a[value])
-        value_b = abs(self._fluxes_b[value])
+        value_a = self._fluxes_a[value]
+        value_b = self._fluxes_b[value]
         try:
-            return value_a/value_b
+            return (value_a - value_b)/value_a
         except ZeroDivisionError:
             return None
 
@@ -188,7 +189,7 @@ class FluxDistributionComparison(Result):
         columns = ["fluxes_%s" % self._a_key, "fluxes_%s" % self._b_key,
                    "manhattan_distance", "euclidean_distance",
                    "activity_profile", "fold_change"]
-        data = np.zeros((len(self._fluxes_a.keys()), 6))
+        data = zeros((len(self._fluxes_a.keys()), 6))
         data[:, 0] = [self._fluxes_a.fluxes[r] for r in index]
         data[:, 1] = [self._fluxes_b.fluxes[r] for r in index]
         data[:, 2] = [self._manhattan_distance(r) for r in index]
