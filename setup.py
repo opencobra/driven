@@ -53,6 +53,10 @@ setup(
                      " to integrate 'omics' data in genome-scale methods.",
     classifiers=[
         'Development Status :: 4 - Beta',
+        'Intended Audience :: Education',
+        'Intended Audience :: Healthcare Industry',
+        'Intended Audience :: Science/Research',
+        'Topic :: Scientific/Engineering :: Bio-Informatics',
         'Topic :: Utilities',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
