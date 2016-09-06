@@ -17,7 +17,9 @@ from __future__ import absolute_import, print_function
 import six
 
 from math import sqrt
-from numpy import log2, nan, zeros
+
+from cobra import Reaction
+from numpy import nan, zeros
 
 from cameo.core.result import Result
 from cameo.flux_analysis.simulation import FluxDistributionResult
@@ -139,10 +141,17 @@ class FluxDistributionDiff(Result):
                all([rid in flux_dist_b.fluxes for rid in flux_dist_a.fluxes])
 
         self._a_key = a_key
-        self._fluxes_a = flux_dist_a
+        self._fluxes_a = flux_dist_a.fluxes
 
         self._b_key = b_key
-        self._fluxes_b = flux_dist_b
+        self._fluxes_b = flux_dist_b.fluxes
+
+    def normalize(self, reaction):
+        if isinstance(reaction, Reaction):
+            reaction = reaction.id
+
+        self._fluxes_a = {rid: flux/self._fluxes_a[reaction] for rid, flux in six.iteritems(self._fluxes_a)}
+        self._fluxes_b = {rid: flux/self._fluxes_b[reaction] for rid, flux in six.iteritems(self._fluxes_b)}
 
     def _manhattan_distance(self, value):
         return abs(self._fluxes_a[value] - self._fluxes_b[value])
@@ -190,8 +199,8 @@ class FluxDistributionDiff(Result):
                    "manhattan_distance", "euclidean_distance",
                    "activity_profile", "fold_change"]
         data = zeros((len(self._fluxes_a.keys()), 6))
-        data[:, 0] = [self._fluxes_a.fluxes[r] for r in index]
-        data[:, 1] = [self._fluxes_b.fluxes[r] for r in index]
+        data[:, 0] = [self._fluxes_a[r] for r in index]
+        data[:, 1] = [self._fluxes_b[r] for r in index]
         data[:, 2] = [self._manhattan_distance(r) for r in index]
         data[:, 3] = [self._euclidean_distance(r) for r in index]
         data[:, 4] = [self._activity(r) for r in index]
