@@ -14,7 +14,7 @@
 from warnings import warn
 
 from driven.vizualization.plotting import Plotter
-from plotly.graph_objs import Scatter
+from plotly.graph_objs import Figure, Layout, Scatter
 
 
 class PlotlyPlotter(Plotter):
@@ -26,13 +26,30 @@ class PlotlyPlotter(Plotter):
     def scatter(self, dataframe, x=None, y=None, width=None, height=None, color=None, title='Scatter', xaxis_label=None,
                 yaxis_label=None, label=None):
 
+        color = self.__default_options__.get('color', None) if color is None else color
+        width = self.__default_options__.get('width', None) if width is None else width
+
         scatter = Scatter(x=dataframe[x],
                           y=dataframe[y],
-                          mode='markers')
+                          mode='markers',
+                          marker=dict(color=color))
 
         if label:
             scatter['text'] = dataframe[label]
 
+        width, height = self._width_height(width, height)
+
+        layout = Layout(title=title,
+                        width=width,
+                        height=height)
+
+        if xaxis_label:
+            layout['xaxis'] = dict(title=xaxis_label)
+
+        if yaxis_label:
+            layout['yaxis'] = dict(title=yaxis_label)
+
+        return Figure(data=[scatter], layout=layout)
 
     def histogram(self, dataframe, bins=100, width=None, height=None, palette=None, title='Histogram', values=None,
                   groups=None, legend=True):
