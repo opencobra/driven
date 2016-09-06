@@ -59,7 +59,7 @@ class BokehPlotter(Plotter):
 
     def scatter(self, dataframe, x=None, y=None, width=None, height=None, color=None, title=None,
                 xaxis_label=None, yaxis_label=None, label=None):
-        color = self.__default_options__.get('palette', None) if color is None else color
+        color = self.__default_options__.get('color', None) if color is None else color
         width = self.__default_options__.get('width', None) if width is None else width
 
         width, height = self._width_height(width, height)
