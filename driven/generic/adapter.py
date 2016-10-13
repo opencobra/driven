@@ -174,3 +174,19 @@ class ModelModificationMixin(object):
             metabolite.annotation = info.to_dict()
         else:
             logger.debug('No formula for {}'.format(metabolite.id))
+
+    def model_metabolite(self, entity, compartment='_e'):
+        """Get metabolite associated with this model for a given entity
+
+        Parameters
+        ----------
+        entity
+            a chemical entity as provided by iloop
+        compartment
+            the compartment where to find the metabolite, e.g. _e for exchange
+        Returns
+        -------
+        the model metabolite (or None if no matching found)
+        """
+        mnx_id = metanetx.all2mnx.get('chebi:' + str(entity.chebi_id))
+        return get_existing_metabolite(mnx_id, self.model, compartment)
