@@ -1,4 +1,5 @@
 import re
+import gnomic
 from cameo.data import metanetx
 from cameo.core.reaction import Reaction
 from cameo.core.metabolite import Metabolite
@@ -65,6 +66,10 @@ def find_metabolite_info(met_id):
         return metanetx.chem_prop.loc[metanetx.all2mnx['bigg:' + met_id]]
     except KeyError:
         return None
+
+
+def feature_id(feature):
+    return feature.name if feature.name else feature.accession.identifier
 
 
 class ModelModificationMixin(object):
@@ -175,18 +180,251 @@ class ModelModificationMixin(object):
         else:
             logger.debug('No formula for {}'.format(metabolite.id))
 
-    def model_metabolite(self, entity, compartment='_e'):
+    def model_metabolite(self, metabolite_id, compartment='_e'):
         """Get metabolite associated with this model for a given entity
 
         Parameters
         ----------
-        entity
-            a chemical entity as provided by iloop
+        metabolite_id
+            string of format <database>:<id>, f.e. chebi:12345
         compartment
             the compartment where to find the metabolite, e.g. _e for exchange
         Returns
         -------
         the model metabolite (or None if no matching found)
         """
-        mnx_id = metanetx.all2mnx.get('chebi:' + str(entity.chebi_id))
+        mnx_id = metanetx.all2mnx.get(metabolite_id)
         return get_existing_metabolite(mnx_id, self.model, compartment)
+
+
+def map_equation_to_bigg(equation: str, compartment=None):
+    """Try to map given equation which contains KEGG ids to the equation which contains BIGG ids.
+    If metabolite does not exist in the BIGG database, use Metanetx id.
+    If compartment is given, metabolites ids will have it as postfix.
+
+    Example:
+    Input: C00002 + C00033 <=> C00013 + C05993, compartment='_c'
+    Output: atp_c + ac_c <=> ppi_c + MNXM4377_c
+
+    :param equation: string
+    :param compartment: f.e. "_c"
+    :return:
+    """
+    array = equation.split()
+    result = []
+    for i, el in enumerate(array):
+        if not re.match("^[A-Za-z][A-Za-z0-9]*$", el):
+            result.append(el)
+        else:
+            try:
+                el = metanetx.all2mnx['kegg:' + el]
+                el = metanetx.mnx2bigg[el].replace('bigg:', '')
+            except KeyError:
+                pass
+            if compartment:
+                el += compartment
+            result.append(el)
+    return ' '.join(result)
+
+
+def full_genotype(genotype_changes: list) -> gnomic.Genotype:
+    """Construct gnomic Genotype object from the list of strings with changes
+
+    :param genotype_changes: list of changes, f.e. ['-tyrA::kanMX+', 'kanMX-']
+    :return:
+    """
+
+    def chain(definitions, **kwargs):
+        if not definitions:
+            return gnomic.Genotype([])
+        genotype = gnomic.Genotype.parse(definitions[0], **kwargs)
+        for definition in definitions[1:]:
+            genotype = gnomic.Genotype.parse(definition, parent=genotype, **kwargs)
+        return genotype
+
+    return chain(genotype_changes)
+
+
+class GenotypeChangeModel(ModelModificationMixin):
+    """
+    Applies genotype change on cameo model
+    """
+
+    def __init__(self, model, genotype_changes, genes_to_reactions):
+        """Initialize change model
+
+        :param model: cameo model
+        :param genotype_changes: gnomic.Genotype object
+        :param genes_to_reactions: dictionary like {<gene name>: {<reaction id>: <reactions equation>, ...}, ...}
+        """
+        self.compartment = '_c'
+        self.initial_model = model
+        self.model = self.initial_model.copy()  # TODO: remove copying if this is unnecessary
+        self.genes_to_reactions = genes_to_reactions
+        self.knocked_out_genes = set()
+        self.added_genes = set()
+        self.added_reactions = set()
+        self.new_genes = []
+        self.new_reactions = []
+        self.new_metabolites = []
+        self.apply_changes(genotype_changes)
+
+    def apply_changes(self, genotype_changes: gnomic.Genotype):
+        """Apply genotype changes on initial model
+
+        :param genotype_changes: gnomic.Genotype
+        :return:
+        """
+        for change in genotype_changes.changes():
+            if isinstance(change, gnomic.Mutation):
+                self.apply_mutation(change)
+            if isinstance(change, gnomic.Plasmid):
+                self.add_plasmid(change)
+
+    def apply_mutation(self, mutation: gnomic.Mutation):
+        """Apply mutations on initial model
+
+        :param mutation: gnomic.Mutation
+        :return:
+        """
+        if mutation.old:
+            for feature in mutation.old.features():
+                self.knockout_gene(feature)
+        if mutation.new:
+            for feature in mutation.new.features():
+                self.add_gene(feature)
+
+    def add_plasmid(self, plasmid: gnomic.Plasmid):
+        """Add plasmid features to the initial model.
+        No plasmid instance in cameo, so changes are made in model genes and reactions directly
+
+        :param plasmid: gnomic.Plasmid
+        :return:
+        """
+        for feature in plasmid.features():
+            self.add_gene(feature)
+
+    def knockout_gene(self, feature: gnomic.Feature):
+        """Perform gene knockout.
+        Use feature name as gene name
+
+        :param feature: gnomic.Feature
+        :return:
+        """
+        gene = self.model.genes.query(feature.name, attribute="name")
+        if gene:
+            gene[0].knock_out()
+            self.knocked_out_genes.add(gene[0].name)
+            logger.info('Gene knockout: {}'.format(gene[0].name))
+        else:
+            logger.info('Gene for knockout is not found: {}'.format(feature.name))
+
+    def add_gene(self, feature: gnomic.Feature):
+        """Perform gene insertion.
+        Find all the reactions associated with this gene using KEGGClient and add them to the model
+
+        :param feature: gnomic.Feature
+        :return:
+        """
+        logger.info('Add gene: {}'.format(feature.name))
+        identifier = feature_id(feature)
+        if self.model.genes.query(identifier, attribute='name'):  # do not add if gene is already there
+            logger.info('Gene {} exists in the model'.format(feature.name))
+            return
+        for reaction_id, equation in self.genes_to_reactions.get(identifier, {}).items():
+            self.add_reaction(reaction_id, equation, identifier)
+        logger.info('Gene added: {}'.format(identifier))
+
+    def add_reaction(self, reaction_id: str, equation: str, gene_name: str):
+        """Add new reaction by rn ID from equation, where metabolites defined by kegg ids.
+
+        :param reaction_id: reaction rn ID
+        :param equation: equation string, where metabolites are defined by kegg ids
+        :param gene_name: gene name
+        :return:
+        """
+        reaction = Reaction(reaction_id)
+        self.model.add_reactions([reaction])
+        equation = map_equation_to_bigg(equation, self.compartment)
+        logger.info('New reaction: {}'.format(equation))
+        reaction.build_reaction_from_string(equation)
+        for metabolite in reaction.metabolites:
+            if metabolite.formula is None:  # unknown metabolite
+                self.annotate_new_metabolite(metabolite)
+                self.create_exchange(metabolite)
+        reaction.gene_reaction_rule = gene_name
+        self.added_genes.add(gene_name)
+        self.added_reactions.add(reaction.id)
+
+
+class MediumChangeModel(ModelModificationMixin):
+    """
+    Applies medium on cameo model
+    """
+
+    def __init__(self, model, medium):
+        """
+        Parameters
+        ----------
+        model
+            cameo model
+        medium
+            list of dictionaries of format
+            {'id': <compound id (<database>:<id>, f.e. chebi:12345)>, 'concentration': <compound concentration (float)>}
+        """
+        self.initial_model = model
+        self.medium = medium
+        self.model = self.initial_model.copy()
+        self.added_reactions = set()
+        self.apply_medium()
+
+    def apply_medium(self):
+        """For each metabolite in medium try to find corresponding metabolite in e compartment of the model.
+        If metabolite is found, change the lower limit of the reaction to a negative number,
+        so the model would be able to consume this compound.
+        If metabolite is not found in e compartment, log and continue.
+        """
+        for compound in self.medium:
+            existing_metabolite = self.model_metabolite(compound['id'], '_e')
+            if not existing_metabolite:
+                logger.info('No metabolite {}'.format(compound['id']))
+                continue
+            logger.info('Found metabolite {}'.format(compound['id']))
+            self.add_demand_reaction(existing_metabolite)
+
+
+class MeasurementChangeModel(ModelModificationMixin):
+    """
+    Update constraints based on measured fluxes
+    """
+
+    def __init__(self, model, measurements):
+        """
+
+        Parameters
+        ----------
+        model
+            cameo model
+        measurements
+            list of dictionaries of format
+            {'id': <metabolite id (<database>:<id>, f.e. chebi:12345)>, 'measurement': <measurement (float)>}
+        """
+        self.initial_model = model
+        self.measurements = measurements
+        self.model = self.initial_model.copy()
+        self.adjusted_reactions = []
+        self.missing_in_model = []
+        self.apply_exchanges()
+
+    def apply_exchanges(self):
+        """For each measured flux (production-rate / uptake-rate), constrain the model by setting
+        upper and lower bound locked to these values. """
+        for scalar in self.measurements:
+            model_metabolite = self.model_metabolite(scalar['id'], '_e')
+            if not model_metabolite:
+                self.missing_in_model.append(scalar['id'])
+                logger.info('Model is missing metabolite {}'.format(scalar['id']))
+                return
+            reaction = list(set(model_metabolite.reactions).intersection(self.model.exchanges))[0]
+            reaction.change_bounds(lb=scalar['measurement'], ub=scalar['measurement'])
+            self.adjusted_reactions.append((reaction.id, scalar['measurement']))
