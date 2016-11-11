@@ -97,17 +97,19 @@ class TestStrainToModel(unittest.TestCase):
 
     def test_measurements(self):
         """Check if bounds for exchange reactions are correct"""
+        model = wild_model.copy()
         measurements = [{'id': 'bigg:thrp', 'measurement': 15}, {'id': 'chebi:16695', 'measurement': -3}]
-        model = MeasurementChangeModel(wild_model, measurements).model
+        model = MeasurementChangeModel(model, measurements).model
         self.assertEqual(model.reactions.EX_thrp_e.lower_bound, 15)
         self.assertEqual(model.reactions.EX_thrp_e.upper_bound, 15)
         self.assertEqual(model.reactions.EX_ump_e.lower_bound, -3)
         self.assertEqual(model.reactions.EX_ump_e.upper_bound, -3)
 
     def test_medium(self):
+        model = wild_model.copy()
         """Demand reaction bounds are changed depending on carbon in the formula"""
         medium = [{'id': 'bigg:23dappa', 'concentration': 0.6}, {'id': 'chebi:23335', 'concentration': 0.05}]
-        model = MediumChangeModel(wild_model, medium).model
+        model = MediumChangeModel(model, medium).model
         self.assertEqual(model.reactions.EX_23dappa_e.lower_bound, -1)
         self.assertEqual(model.reactions.EX_23dappa_e.upper_bound, wild_model.reactions.EX_23dappa_e.upper_bound)
         self.assertEqual(model.reactions.EX_cobalt2_e.lower_bound, -1000)

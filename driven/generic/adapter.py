@@ -258,8 +258,7 @@ class GenotypeChangeModel(ModelModificationMixin):
         :param genes_to_reactions: dictionary like {<gene name>: {<reaction id>: <reactions equation>, ...}, ...}
         """
         self.compartment = '_c'
-        self.initial_model = model
-        self.model = self.initial_model.copy()  # TODO: remove copying if this is unnecessary
+        self.model = model
         self.genes_to_reactions = genes_to_reactions
         self.knocked_out_genes = set()
         self.added_genes = set()
@@ -372,9 +371,8 @@ class MediumChangeModel(ModelModificationMixin):
             list of dictionaries of format
             {'id': <compound id (<database>:<id>, f.e. chebi:12345)>, 'concentration': <compound concentration (float)>}
         """
-        self.initial_model = model
         self.medium = medium
-        self.model = self.initial_model.copy()
+        self.model = model
         self.added_reactions = set()
         self.apply_medium()
 
@@ -409,9 +407,8 @@ class MeasurementChangeModel(ModelModificationMixin):
             list of dictionaries of format
             {'id': <metabolite id (<database>:<id>, f.e. chebi:12345)>, 'measurement': <measurement (float)>}
         """
-        self.initial_model = model
         self.measurements = measurements
-        self.model = self.initial_model.copy()
+        self.model = model
         self.adjusted_reactions = []
         self.missing_in_model = []
         self.apply_exchanges()
