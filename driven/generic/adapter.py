@@ -197,7 +197,7 @@ class ModelModificationMixin(object):
         return get_existing_metabolite(mnx_id, self.model, compartment)
 
 
-def map_equation_to_bigg(equation: str, compartment=None):
+def map_equation_to_bigg(equation, compartment=None):
     """Try to map given equation which contains KEGG ids to the equation which contains BIGG ids.
     If metabolite does not exist in the BIGG database, use Metanetx id.
     If compartment is given, metabolites ids will have it as postfix.
@@ -227,7 +227,7 @@ def map_equation_to_bigg(equation: str, compartment=None):
     return ' '.join(result)
 
 
-def full_genotype(genotype_changes: list) -> gnomic.Genotype:
+def full_genotype(genotype_changes):
     """Construct gnomic Genotype object from the list of strings with changes
 
     :param genotype_changes: list of changes, f.e. ['-tyrA::kanMX+', 'kanMX-']
@@ -268,7 +268,7 @@ class GenotypeChangeModel(ModelModificationMixin):
         self.new_metabolites = []
         self.apply_changes(genotype_changes)
 
-    def apply_changes(self, genotype_changes: gnomic.Genotype):
+    def apply_changes(self, genotype_changes):
         """Apply genotype changes on initial model
 
         :param genotype_changes: gnomic.Genotype
@@ -280,7 +280,7 @@ class GenotypeChangeModel(ModelModificationMixin):
             if isinstance(change, gnomic.Plasmid):
                 self.add_plasmid(change)
 
-    def apply_mutation(self, mutation: gnomic.Mutation):
+    def apply_mutation(self, mutation):
         """Apply mutations on initial model
 
         :param mutation: gnomic.Mutation
@@ -293,7 +293,7 @@ class GenotypeChangeModel(ModelModificationMixin):
             for feature in mutation.new.features():
                 self.add_gene(feature)
 
-    def add_plasmid(self, plasmid: gnomic.Plasmid):
+    def add_plasmid(self, plasmid):
         """Add plasmid features to the initial model.
         No plasmid instance in cameo, so changes are made in model genes and reactions directly
 
@@ -303,7 +303,7 @@ class GenotypeChangeModel(ModelModificationMixin):
         for feature in plasmid.features():
             self.add_gene(feature)
 
-    def knockout_gene(self, feature: gnomic.Feature):
+    def knockout_gene(self, feature):
         """Perform gene knockout.
         Use feature name as gene name
 
@@ -318,7 +318,7 @@ class GenotypeChangeModel(ModelModificationMixin):
         else:
             logger.info('Gene for knockout is not found: {}'.format(feature.name))
 
-    def add_gene(self, feature: gnomic.Feature):
+    def add_gene(self, feature):
         """Perform gene insertion.
         Find all the reactions associated with this gene using KEGGClient and add them to the model
 
@@ -334,7 +334,7 @@ class GenotypeChangeModel(ModelModificationMixin):
             self.add_reaction(reaction_id, equation, identifier)
         logger.info('Gene added: {}'.format(identifier))
 
-    def add_reaction(self, reaction_id: str, equation: str, gene_name: str):
+    def add_reaction(self, reaction_id, equation, gene_name):
         """Add new reaction by rn ID from equation, where metabolites defined by kegg ids.
 
         :param reaction_id: reaction rn ID
