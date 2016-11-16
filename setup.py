@@ -35,7 +35,7 @@ else:
         'six>=1.9.0',
         'ipywidgets>=4.0',
         'pandas>=0.16.2',
-        'gnomic>=0.2.0',
+        'gnomic>=0.2.1',
     ]
 
 setup(
