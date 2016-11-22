@@ -262,7 +262,7 @@ class GenotypeChangeModel(ModelModificationMixin):
         self.model = model
         self.genes_to_reactions = genes_to_reactions
         self.changes = {
-            'added': {'reactions': set()},  # reaction contain information about genes and metabolites
+            'added': {'reactions': set(), 'metabolites': set()},  # reaction contain information about genes
             'removed': {'genes': set()},
         }
         self.apply_changes(genotype_changes)
@@ -350,6 +350,7 @@ class GenotypeChangeModel(ModelModificationMixin):
             if metabolite.formula is None:  # unknown metabolite
                 self.annotate_new_metabolite(metabolite)
                 self.create_exchange(metabolite)
+                self.changes['added']['metabolites'].add(metabolite)
         reaction.gene_reaction_rule = gene_name
         self.changes['added']['reactions'].add(reaction)
 
