@@ -115,6 +115,7 @@ class ModelModificationMixin(object):
             logger.debug('Add exchange reaction for metabolite: {}'.format(metabolite.id))
             exchange_reaction = self.model.add_exchange(metabolite, prefix='EX_')
             self.changes['added']['reactions'].add(exchange_reaction)
+            self.annotate_new_metabolites(exchange_reaction)
         except ValueError:
             logger.debug('Exchange reaction exists for metabolite {}'.format(metabolite.id))
 
@@ -138,6 +139,7 @@ class ModelModificationMixin(object):
             adapter_reaction.add_metabolites({metabolite: -1, existing_metabolite: 1})
             self.model.add_reactions([adapter_reaction])
             self.changes['added']['reactions'].add(adapter_reaction)
+            self.annotate_new_metabolites(adapter_reaction)
             logger.debug('Adapter reaction added: {} <--> {}'.format(metabolite.id, existing_metabolite.id))
         except Exception:  # TODO: raise a reasonable exception on cameo side if the reaction exists
             logger.debug('Adapter reaction exists: {} <--> {}'.format(metabolite.id, existing_metabolite.id))
@@ -159,6 +161,7 @@ class ModelModificationMixin(object):
         if exchange_reaction.lower_bound >= 0:
             exchange_reaction.lower_bound = -1 if contains_carbon(metabolite) else -1000
         self.changes['added']['reactions'].add(exchange_reaction)
+        self.annotate_new_metabolites(exchange_reaction)
 
     @staticmethod
     def annotate_new_metabolite(metabolite):
@@ -180,6 +183,23 @@ class ModelModificationMixin(object):
             metabolite.annotation = info.to_dict()
         else:
             logger.debug('No formula for {}'.format(metabolite.id))
+
+    def annotate_new_metabolites(self, reaction):
+        """Annotate new metabolites with chem_prop information and keep track of them
+
+        Parameters
+        ----------
+        reaction : Reaction
+            reaction that is added to the model
+
+        Returns
+        -------
+
+        """
+        for metabolite in reaction.metabolites:
+            if metabolite.formula is None:  # unknown metabolite
+                self.annotate_new_metabolite(metabolite)
+                self.changes['added']['metabolites'].add(metabolite)
 
     def model_metabolite(self, metabolite_id, compartment='_e'):
         """Get metabolite associated with this model for a given entity
@@ -348,9 +368,7 @@ class GenotypeChangeModel(ModelModificationMixin):
         reaction.build_reaction_from_string(equation)
         for metabolite in reaction.metabolites:
             if metabolite.formula is None:  # unknown metabolite
-                self.annotate_new_metabolite(metabolite)
                 self.create_exchange(metabolite)
-                self.changes['added']['metabolites'].add(metabolite)
         reaction.gene_reaction_rule = gene_name
         self.changes['added']['reactions'].add(reaction)
 
