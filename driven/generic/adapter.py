@@ -77,7 +77,7 @@ class ModelModificationMixin(object):
     Base model modification class, providing methods for adding adapter and exchange reactions for new metabolites
     """
     model = None
-    added_reactions = None
+    changes = None
 
     def create_exchange(self, metabolite):
         """For given metabolite A_c from c compartment, create:
@@ -114,7 +114,7 @@ class ModelModificationMixin(object):
         try:
             logger.debug('Add exchange reaction for metabolite: {}'.format(metabolite.id))
             exchange_reaction = self.model.add_exchange(metabolite, prefix='EX_')
-            self.added_reactions.add(exchange_reaction.id)
+            self.changes['added']['reactions'].add(exchange_reaction)
         except ValueError:
             logger.debug('Exchange reaction exists for metabolite {}'.format(metabolite.id))
 
@@ -137,7 +137,7 @@ class ModelModificationMixin(object):
             adapter_reaction.lower_bound = -1000
             adapter_reaction.add_metabolites({metabolite: -1, existing_metabolite: 1})
             self.model.add_reactions([adapter_reaction])
-            self.added_reactions.add(adapter_reaction.id)
+            self.changes['added']['reactions'].add(adapter_reaction)
             logger.debug('Adapter reaction added: {} <--> {}'.format(metabolite.id, existing_metabolite.id))
         except Exception:  # TODO: raise a reasonable exception on cameo side if the reaction exists
             logger.debug('Adapter reaction exists: {} <--> {}'.format(metabolite.id, existing_metabolite.id))
@@ -158,6 +158,7 @@ class ModelModificationMixin(object):
         exchange_reaction = list(set(metabolite.reactions).intersection(self.model.exchanges))[0]
         if exchange_reaction.lower_bound >= 0:
             exchange_reaction.lower_bound = -1 if contains_carbon(metabolite) else -1000
+        self.changes['added']['reactions'].add(exchange_reaction)
 
     @staticmethod
     def annotate_new_metabolite(metabolite):
@@ -260,12 +261,10 @@ class GenotypeChangeModel(ModelModificationMixin):
         self.compartment = '_c'
         self.model = model
         self.genes_to_reactions = genes_to_reactions
-        self.knocked_out_genes = set()
-        self.added_genes = set()
-        self.added_reactions = set()
-        self.new_genes = []
-        self.new_reactions = []
-        self.new_metabolites = []
+        self.changes = {
+            'added': {'reactions': set()},  # reaction contain information about genes and metabolites
+            'removed': {'genes': set()},
+        }
         self.apply_changes(genotype_changes)
 
     def apply_changes(self, genotype_changes):
@@ -313,7 +312,7 @@ class GenotypeChangeModel(ModelModificationMixin):
         gene = self.model.genes.query(feature.name, attribute="name")
         if gene:
             gene[0].knock_out()
-            self.knocked_out_genes.add(gene[0].name)
+            self.changes['removed']['genes'].add(gene[0])
             logger.info('Gene knockout: {}'.format(gene[0].name))
         else:
             logger.info('Gene for knockout is not found: {}'.format(feature.name))
@@ -352,8 +351,7 @@ class GenotypeChangeModel(ModelModificationMixin):
                 self.annotate_new_metabolite(metabolite)
                 self.create_exchange(metabolite)
         reaction.gene_reaction_rule = gene_name
-        self.added_genes.add(gene_name)
-        self.added_reactions.add(reaction.id)
+        self.changes['added']['reactions'].add(reaction)
 
 
 class MediumChangeModel(ModelModificationMixin):
@@ -373,7 +371,9 @@ class MediumChangeModel(ModelModificationMixin):
         """
         self.medium = medium
         self.model = model
-        self.added_reactions = set()
+        self.changes = {
+            'added': {'reactions': set()},
+        }
         self.apply_medium()
 
     def apply_medium(self):
@@ -409,7 +409,9 @@ class MeasurementChangeModel(ModelModificationMixin):
         """
         self.measurements = measurements
         self.model = model
-        self.adjusted_reactions = []
+        self.changes = {
+            'added': {'reactions': set()},
+        }
         self.missing_in_model = []
         self.apply_exchanges()
 
@@ -424,4 +426,4 @@ class MeasurementChangeModel(ModelModificationMixin):
                 return
             reaction = list(set(model_metabolite.reactions).intersection(self.model.exchanges))[0]
             reaction.change_bounds(lb=scalar['measurement'], ub=scalar['measurement'])
-            self.adjusted_reactions.append((reaction.id, scalar['measurement']))
+            self.changes['added']['reactions'].add(reaction)

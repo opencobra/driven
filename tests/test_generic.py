@@ -43,7 +43,7 @@ GENES_TO_REACTIONS = {
 # ModelModificationMixin is a mixin, instances shoudn't be created
 class TestAdapter(ModelModificationMixin):
     def __init__(self, model):
-        self.added_reactions = set()
+        self.changes = {'added': {'reactions': set()}}
         self.model = model
 
 
@@ -86,7 +86,7 @@ class TestStrainToModel(unittest.TestCase):
         model = GenotypeChangeModel(wild_model.copy(), full_genotype(knockout_chain), GENES_TO_REACTIONS)
         for gene_name, gene_id in genes.items():
             check_knockout_bounds(model.model, getattr(model.model.genes, gene_id), self.assertTrue)
-        self.assertTrue(set(genes.keys()) == model.knocked_out_genes)
+        self.assertTrue(set(genes.keys()) == set([g.name for g in model.changes['removed']['genes']]))
 
     def test_add_genes(self):
         """Adding a gene makes the new reactions appear"""
