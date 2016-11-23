@@ -95,6 +95,11 @@ class TestStrainToModel(unittest.TestCase):
             model = GenotypeChangeModel(wild_model.copy(), full_genotype(['+' + gene_name]), GENES_TO_REACTIONS)
             self.assertTrue(hasattr(model.model.reactions, reaction))
 
+    def test_add_reaction(self):
+        adapter = GenotypeChangeModel(wild_model.copy(), full_genotype([]), {})
+        adapter.add_reaction('rn:R00442', 'C00063 + C00046 <=> C00013 + C00046', 'Aac')
+        self.assertIn('MNXM90337_c', set([m.id for m in adapter.changes['added']['metabolites']]))
+
     def test_measurements(self):
         """Check if bounds for exchange reactions are correct"""
         model = wild_model.copy()
