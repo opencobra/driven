@@ -437,12 +437,12 @@ class MeasurementChangeModel(ModelModificationMixin):
     def apply_exchanges(self):
         """For each measured flux (production-rate / uptake-rate), constrain the model by setting
         upper and lower bound locked to these values. """
-        for scalar in self.measurements:
-            model_metabolite = self.model_metabolite(scalar['id'], '_e')
+        for compound in self.measurements:
+            model_metabolite = self.model_metabolite(compound['id'], '_e')
             if not model_metabolite:
-                self.missing_in_model.append(scalar['id'])
-                logger.info('Model is missing metabolite {}'.format(scalar['id']))
-                return
+                self.missing_in_model.append(compound['id'])
+                logger.info('Model is missing metabolite {}'.format(compound['id']))
+                continue
             reaction = list(set(model_metabolite.reactions).intersection(self.model.exchanges))[0]
-            reaction.change_bounds(lb=scalar['measurement'], ub=scalar['measurement'])
+            reaction.change_bounds(lb=compound['measurement'], ub=compound['measurement'])
             self.changes['added']['reactions'].add(reaction)
