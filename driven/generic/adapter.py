@@ -3,6 +3,7 @@ import gnomic
 from cameo.data import metanetx
 from cameo.core.reaction import Reaction
 from cameo.core.metabolite import Metabolite
+from cobra.manipulation.delete import find_gene_knockout_reactions
 import logging
 logger = logging.getLogger(__name__)
 
@@ -283,7 +284,7 @@ class GenotypeChangeModel(ModelModificationMixin):
         self.genes_to_reactions = genes_to_reactions
         self.changes = {
             'added': {'reactions': set(), 'metabolites': set()},  # reaction contain information about genes
-            'removed': {'genes': set()},
+            'removed': {'genes': set(), 'reactions': set()},
         }
         self.apply_changes(genotype_changes)
 
@@ -329,11 +330,14 @@ class GenotypeChangeModel(ModelModificationMixin):
         :param feature: gnomic.Feature
         :return:
         """
-        gene = self.model.genes.query(feature.name, attribute="name")
-        if gene:
-            gene[0].knock_out()
-            self.changes['removed']['genes'].add(gene[0])
-            logger.info('Gene knockout: {}'.format(gene[0].name))
+        genes = self.model.genes.query(feature.name, attribute="name")
+        if genes:
+            gene = genes[0]
+            gene.knock_out()
+            self.changes['removed']['genes'].add(gene)
+            for reaction in find_gene_knockout_reactions(self.model, [gene]):
+                self.changes['removed']['reactions'].add(reaction)
+            logger.info('Gene knockout: {}'.format(gene.name))
         else:
             logger.info('Gene for knockout is not found: {}'.format(feature.name))
 
