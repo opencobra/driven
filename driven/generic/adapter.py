@@ -81,21 +81,21 @@ class ModelModificationMixin(object):
     changes = None
 
     def create_exchange(self, metabolite):
-        """For given metabolite A_c from c compartment, create:
+        """For given metabolite A_<x> from compartment <x>, create:
         a) corresponding metabolite A_e from e compartment;
-        b) adapter reaction A_c <--> A_e
+        b) adapter reaction A_<x> <--> A_e
         c) exchange reaction A_e -->
 
         Parameters
         ----------
         metabolite : Metabolite
-            metabolite id in format <bigg_id>_c, f.e. Nacsertn_c
+            metabolite id in format <bigg_id>_<x>, f.e. Nacsertn_c
 
         Returns
         -------
 
         """
-        exchange_metabolite = Metabolite(metabolite.id.replace('_c', '_e'), formula=metabolite.formula, compartment='e')
+        exchange_metabolite = Metabolite(metabolite.id[:-2] + '_e', formula=metabolite.formula, compartment='e')
         self.add_adapter_reaction(metabolite, exchange_metabolite)
         self.add_exchange_reaction(exchange_metabolite)
 
@@ -106,7 +106,7 @@ class ModelModificationMixin(object):
         Parameters
         ----------
         metabolite : basestring
-            metabolite id in format <bigg_id>_<compartment_id>, f.e. Nacsertn_c
+            metabolite id in format <bigg_id>_<x>, f.e. Nacsertn_c
 
         Returns
         -------
