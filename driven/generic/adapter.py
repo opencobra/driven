@@ -370,7 +370,7 @@ class GenotypeChangeModel(ModelModificationMixin):
         equation = map_equation_to_bigg(equation, self.compartment)
         logger.info('New reaction: {}'.format(equation))
         reaction.build_reaction_from_string(equation)
-        for metabolite in self.model.metabolites:
+        for metabolite in self.model.reactions.get_by_id(reaction_id).metabolites:
             if not metabolite.formula:  # new unknown metabolite
                 self.create_exchange(metabolite)
         reaction.gene_reaction_rule = gene_name
