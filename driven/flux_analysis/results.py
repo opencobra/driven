@@ -187,9 +187,9 @@ class FluxDistributionDiff(Result):
     def _fold_change(self, value):
         value_a = self._fluxes_a[value]
         value_b = self._fluxes_b[value]
-        try:
-            return (value_a - value_b)/value_a
-        except ZeroDivisionError:
+        if value_a > 0:
+            return (value_a - value_b) / value_a
+        else:
             return None
 
     @property
