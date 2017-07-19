@@ -29,6 +29,7 @@ else:
         'cobra',
         'ipython',
         'numpy',
+        'ggplot',
         'six',
         'pandas'
     ]

@@ -5,3 +5,4 @@ pandas>=0.16.2
 sympy>=0.7.5
 cameo
 IPython>=4.0
+ggplot
