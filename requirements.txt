@@ -1,7 +1,7 @@
-six
-cobra
-numpy
-pandas
-sympy
+six>=1.9.0
+cobra>=0.6.2
+numpy>=1.9.2
+pandas>=0.16.2
+sympy>=0.7.5
 cameo
-IPython
+IPython>=4.0
