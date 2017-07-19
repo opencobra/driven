@@ -1,0 +1,7 @@
+six
+cobra
+numpy
+pandas
+sympy
+cameo
+IPython

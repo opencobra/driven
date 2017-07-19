@@ -34,7 +34,7 @@ Real = sympy.RealNumber
 
 
 def evaluate(model, candidates, coefficients, profiles, evaluators, **kwargs):
-    if all(map(lambda v : v == 0, coefficients)):
+    if all(map(lambda v: v == 0, coefficients)):
         return Pareto([1000000] + [100000 for _ in profiles])
     else:
         fitness_list = [f(model, coefficients, candidates, profile, **kwargs) for f, profile in zip(evaluators, profiles)]
@@ -49,7 +49,7 @@ def zero_one_bounder(candidate, args):
 
 
 class FitProfileStrategy(object):
-    def __init__(self, profiles=[], evaluators=[], binary=True, use_reactions=True, model=None,
+    def __init__(self, profiles=None, evaluators=None, binary=True, use_reactions=True, model=None,
                  heuristic_method=NSGA2, **kwargs):
         self._heuristic_method = heuristic_method(Random())
         self.model = model
@@ -61,8 +61,8 @@ class FitProfileStrategy(object):
 
         self.kwargs = dict(use_reactions=use_reactions)
         self.kwargs.update(kwargs)
-        self.profiles = profiles
-        self.evaluators = evaluators
+        self.profiles = profiles or []
+        self.evaluators = evaluators or []
         self.binary = binary
         if binary:
             self._heuristic_method.variator = zero_one_binary_variator

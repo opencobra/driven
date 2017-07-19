@@ -20,15 +20,14 @@ Front. Physio. 3:299. doi: 10.3389/fphys.2012.00299
 """
 
 
-from cameo.core.solver_based_model import SolverBasedModel
-from cameo.core.reaction import Reaction
+from cobra import Model, Reaction
 from cobra import Metabolite
 from driven.data_sets.expression_profile import ExpressionProfile
 import numpy as np
 
 
 def build_model():
-    m = SolverBasedModel("Blazier et al 2012")
+    m = Model("Blazier et al 2012")
     m1_e = Metabolite("M1_e")
     m1 = Metabolite("M1")
     m2 = Metabolite("M2")
@@ -68,10 +67,10 @@ def build_model():
 
     m.add_reactions([r1, r2, r3, r4, r5, r6, r7, r8])
 
-    EX_M1_e = m.add_demand(m1_e, "EX_")
+    EX_M1_e = m.add_boundary(m1_e)
     EX_M1_e.lower_bound = -10
 
-    EX_M4_e = m.add_demand(m4_e, "EX_")
+    EX_M4_e = m.add_boundary(m4_e)
     EX_M4_e.lower_bound = -10
 
     m.objective = r4

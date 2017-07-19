@@ -22,15 +22,13 @@ Bioinformatics 26 (24): 3140-3142. doi: 10.1093/bioinformatics/btq602
 from __future__ import print_function, absolute_import
 from warnings import warn
 
-from cameo.core.solver_based_model import SolverBasedModel
-from cameo.core.reaction import Reaction
-from cobra import Metabolite
+from cobra import Model, Reaction, Metabolite
 from driven.data_sets.expression_profile import ExpressionProfile
 import numpy as np
 
 
 def build_model():
-    m = SolverBasedModel("Zur et al 2012")
+    m = Model("Zur et al 2012")
 
     m1 = Metabolite("M1")
     m2 = Metabolite("M2")

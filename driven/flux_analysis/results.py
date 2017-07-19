@@ -137,8 +137,8 @@ class FluxDistributionDiff(Result):
         super(FluxDistributionDiff, self).__init__(*args, **kwargs)
         assert isinstance(flux_dist_a, FluxDistributionResult)
         assert isinstance(flux_dist_b, FluxDistributionResult)
-        assert all([rid in flux_dist_a.fluxes for rid in flux_dist_b.fluxes]) and \
-               all([rid in flux_dist_b.fluxes for rid in flux_dist_a.fluxes])
+        assert all([rid in flux_dist_a.fluxes.index for rid in flux_dist_b.fluxes.index]) and \
+               all([rid in flux_dist_b.fluxes.index for rid in flux_dist_a.fluxes.index])
 
         self._a_key = a_key
         self._fluxes_a = flux_dist_a.fluxes
