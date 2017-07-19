@@ -14,10 +14,10 @@
 
 from __future__ import absolute_import, print_function
 
-
-from cobra import Reaction
 from sympy import Add, Mul
 from sympy.functions.elementary.miscellaneous import Max, Min
+
+from cobra import Reaction
 
 
 def or2min_and2max(reaction, gene_values):

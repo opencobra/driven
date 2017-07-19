@@ -6,19 +6,19 @@
 
 # http://www.apache.org/licenses/LICENSE-2.0
 
+from functools import partial as p
+
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import six
-from cobra import Model
-from cameo.util import TimeMachine
-from functools import partial as p
-
-from driven.data_sets.expression_profile import ExpressionProfile
 from pandas import DataFrame
 
+from cameo.util import TimeMachine
+from cobra import Model
+from driven.data_sets.expression_profile import ExpressionProfile
 from driven.vizualization.plotting import plotting
 
 

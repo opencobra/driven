@@ -14,13 +14,14 @@
 
 from __future__ import absolute_import, print_function
 
-from cameo.visualization.escher_ext import NotebookBuilder
-from IPython.display import display
 import os
-from pandas import DataFrame
-import six
 
 import numpy as np
+import six
+from IPython.display import display
+from pandas import DataFrame
+
+from cameo.visualization.escher_ext import NotebookBuilder
 
 
 class EscherViewer(object):

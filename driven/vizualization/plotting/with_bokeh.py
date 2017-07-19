@@ -13,15 +13,14 @@
 # limitations under the License.
 
 import collections
-import six
 
-from bokeh.charts import Histogram, Scatter, HeatMap, Line, BoxPlot
-from bokeh.models import HoverTool, GlyphRenderer
+import six
+from bokeh.charts import BoxPlot, HeatMap, Histogram, Line, Scatter
 from bokeh.io import show
+from bokeh.models import GlyphRenderer, HoverTool
 from bokeh.palettes import brewer
 
 from driven.vizualization.plotting.abstract import Plotter
-
 
 TOOLS = 'pan,box_zoom,wheel_zoom,resize,reset,save'
 
