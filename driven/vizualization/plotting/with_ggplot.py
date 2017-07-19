@@ -14,14 +14,12 @@
 import collections
 
 import six
+from ggplot import (
+    aes, geom_histogram, geom_point, geom_tile, ggplot, ggtitle, scale_color_brewer, scale_colour_gradient2,
+    scale_colour_manual, scale_x_continuous, scale_y_continuous)
 from matplotlib.ticker import Locator
 
 from driven.vizualization.plotting.abstract import Plotter
-from ggplot import ggplot, aes
-from ggplot import geom_histogram, geom_tile, geom_point
-from ggplot import scale_color_brewer, scale_colour_manual
-from ggplot import ggtitle
-from ggplot import scale_x_continuous, scale_y_continuous, scale_colour_gradient2
 
 Locator.MAXTICKS = 15000
 

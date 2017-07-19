@@ -14,10 +14,10 @@
 
 from __future__ import absolute_import, print_function
 
-
-from cobra import Reaction
 from sympy import Symbol
 from sympy.parsing.ast_parser import parse_expr
+
+from cobra import Reaction
 
 
 def __gene_to_expression__(reaction):
@@ -26,4 +26,3 @@ def __gene_to_expression__(reaction):
     return parse_expr(rule, local_dict)
 
 Reaction.gene_expression = __gene_to_expression__
-

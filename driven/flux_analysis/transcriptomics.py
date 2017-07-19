@@ -14,15 +14,15 @@
 
 from __future__ import absolute_import, print_function
 
-
 import numbers
+
+import six
+from sympy import Add
+
 from cameo import fba
+from cameo.flux_analysis import flux_variability_analysis as fva
 from cameo.flux_analysis.simulation import FluxDistributionResult
 from cobra import Model
-from cameo.flux_analysis import flux_variability_analysis as fva
-import six
-
-from sympy import Add
 from driven.data_sets.expression_profile import ExpressionProfile
 from driven.data_sets.normalization import or2min_and2max
 from driven.flux_analysis.results import GimmeResult, IMATResult

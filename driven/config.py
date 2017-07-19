@@ -14,4 +14,3 @@
 from driven.vizualization.plotting import plotting
 
 __all__ = ['plotting']
-

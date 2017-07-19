@@ -15,11 +15,11 @@
 from __future__ import absolute_import, print_function
 
 from itertools import combinations
-from numpy import ndarray
 
-from driven.data_sets.normalization import or2min_and2max
+from numpy import ndarray
 from pandas import DataFrame, melt
 
+from driven.data_sets.normalization import or2min_and2max
 from driven.stats import freedman_diaconis
 from driven.utils import get_common_start
 from driven.vizualization.plotting import plotting

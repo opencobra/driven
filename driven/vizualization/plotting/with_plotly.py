@@ -13,8 +13,9 @@
 # limitations under the License.
 from warnings import warn
 
-from driven.vizualization.plotting import Plotter
 from plotly.graph_objs import Figure, Layout, Scatter
+
+from driven.vizualization.plotting import Plotter
 
 
 class PlotlyPlotter(Plotter):
@@ -65,5 +66,3 @@ class PlotlyPlotter(Plotter):
 
     def _palette(self, palette, *args, **kwargs):
         pass
-
-

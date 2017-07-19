@@ -14,17 +14,15 @@
 
 from __future__ import absolute_import, print_function
 
-import six
-
 from math import sqrt
 
-from cobra import Reaction
+import six
 from numpy import nan, zeros
+from pandas import DataFrame
 
 from cameo.core.result import Result
 from cameo.flux_analysis.simulation import FluxDistributionResult
-
-from pandas import DataFrame
+from cobra import Reaction
 
 
 def _compare_flux_distributions(flux_dist1, flux_dist2, self_key="A", other_key="B"):

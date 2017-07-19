@@ -14,7 +14,6 @@
 
 from __future__ import absolute_import, print_function
 
-
 from cobra import Model
 from driven.data_sets.fluxes import FluxConstraints
 from driven.flux_analysis.results import FluxBasedFluxDistribution
