@@ -24,9 +24,9 @@ if on_rtd:
     requirements = ["numpydoc>=0.5"]
 else:
     requirements = [
-        'cameo>=0.7',
+        'cameo==0.10',
         'sympy>=0.7.5',
-        'cobra>=0.4',
+        'cobra>=0.6',
         'ipython>=4.0',
         'pyzmq>=14.5',
         'numpy>=1.9.2',

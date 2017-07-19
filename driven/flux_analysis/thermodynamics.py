@@ -16,10 +16,6 @@
 from __future__ import absolute_import, print_function
 
 
-from functools import partial
-from cameo.util import TimeMachine
-
-
 def tmfa(model, objective=None, delta_gs=None, K=None, *args, **kwargs):
     """
     Thermodynamics-based Metabolic Flux Analysis. [1]
@@ -59,13 +55,14 @@ def tmfa(model, objective=None, delta_gs=None, K=None, *args, **kwargs):
                                                                     sloppy=True)
 
                 constraints.append([k_constraint, flux_constraint])
-        with TimeMachine() as tm:
-            tm(do=partial(setattr, model, 'objective', objective),
-               undo=partial(setattr, model, 'objective', model.objective.expression))
-            tm(do=partial(model.solver.add, variables),
-               undo=partial(model.solver.remove, variables))
-            tm(do=partial(model.solver.add, constraints),
-               undo=partial(model.solver.remove, constraints))
+        # TODO: Not sure what this is meant to do..
+        # with TimeMachine() as tm:
+        #     tm(do=partial(setattr, model, 'objective', objective),
+        #        undo=partial(setattr, model, 'objective', model.objective.expression))
+        #     tm(do=partial(model.solver.add, variables),
+        #        undo=partial(model.solver.remove, variables))
+        #     tm(do=partial(model.solver.add, constraints),
+        #        undo=partial(model.solver.remove, constraints))
 
     finally:
         model.solver._remove_constraints(constraints)

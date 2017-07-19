@@ -14,11 +14,9 @@
 
 from __future__ import absolute_import, print_function
 
+from cobra.manipulation.delete import find_gene_knockout_reactions
 
 __all__ = ["ReactionKnockoutProfiler", "GeneKnockoutProfiler"]
-
-from cameo.util import TimeMachine
-from cobra.manipulation.delete import find_gene_knockout_reactions
 
 
 class KnockoutProfiler(object):
@@ -44,8 +42,8 @@ class ReactionKnockoutProfiler(KnockoutProfiler):
             "first_run": True
         }
 
-        with TimeMachine() as tm:
-            to_knockout.knock_out(tm)
+        with self._model:
+            to_knockout.knock_out()
             return self._simulation_method(self._model,
                                            volatile=False,
                                            cache=cache,
@@ -65,9 +63,9 @@ class GeneKnockoutProfiler(KnockoutProfiler):
             "first_run": True
         }
 
-        with TimeMachine() as tm:
+        with self._model:
             for reaction in reactions:
-                reaction.knock_out(tm)
+                reaction.knock_out()
 
             return self._simulation_method(self._model,
                                            volatile=False,

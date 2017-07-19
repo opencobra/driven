@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import six
-from cameo.solver_based_model import SolverBasedModel
+from cobra import Model
 from cameo.util import TimeMachine
 from functools import partial as p
 
@@ -26,7 +26,7 @@ def expression_sensitivity_analysis(method, model, expression_profile, metrics, 
                                     condition_knockouts=None, growth_rates=None, growth_rates_std=None,
                                     growth_reaction=None, **kwargs):
 
-    assert isinstance(model, SolverBasedModel)
+    assert isinstance(model, Model)
     assert isinstance(expression_profile, ExpressionProfile)
     if condition_exchanges is None:
         condition_exchanges = {}

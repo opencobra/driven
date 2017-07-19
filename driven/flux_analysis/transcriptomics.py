@@ -15,13 +15,11 @@
 from __future__ import absolute_import, print_function
 
 
-from functools import partial
 import numbers
 from cameo import fba
 from cameo.flux_analysis.simulation import FluxDistributionResult
-from cameo.core.solver_based_model import SolverBasedModel
-from cameo.flux_analysis.analysis import flux_variability_analysis as fva
-from cameo.util import TimeMachine
+from cobra import Model
+from cameo.flux_analysis import flux_variability_analysis as fva
 import six
 
 from sympy import Add
@@ -37,7 +35,7 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
 
     Parameters
     ----------
-    model: SolverBased Model
+    model: cobra.Model
         A constraint based model
     expression_profile: ExpressionProfile
         An expression profile
@@ -66,7 +64,7 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
        PLoS Computational Biology, 4(5), e1000082. doi:10.1371/journal.pcbi.1000082
     """
 
-    assert isinstance(model, SolverBasedModel)
+    assert isinstance(model, Model)
     assert isinstance(expression_profile, ExpressionProfile)
     assert isinstance(fraction_of_optimum, numbers.Number)
     assert isinstance(cutoff, numbers.Number)
@@ -97,13 +95,11 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
         if coefficient > 0:
             objective_terms.append(coefficient * (reaction.forward_variable + reaction.reverse_variable))
 
-    with TimeMachine() as tm:
+    with model:
         gimme_objective = model.solver.interface.Objective(Add(*objective_terms), direction="min")
-        tm(do=partial(setattr, model, "objective", gimme_objective),
-           undo=partial(setattr, model, "objective", model.objective.expression))
-        tm(do=partial(model.solver.add, fix_obj_constraint),
-           undo=partial(model.solver.remove, [fix_obj_constraint]))
-        solution = model.solve()
+        model.objective = gimme_objective
+        model.add_cons_vars(fix_obj_constraint)
+        solution = model.optimize()
         return GimmeResult(solution.fluxes, solution.f, objective_dist.fluxes, reaction_profile, cutoff)
 
 
@@ -115,7 +111,7 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
 
     Parameters
     ----------
-    model: SolverBasedModel
+    model: cobra.Model
         A constraint-based model
     expression_profile: ExpressionProfile
         The expression profile
@@ -126,7 +122,7 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
     epsilon: float
     """
 
-    assert isinstance(model, SolverBasedModel)
+    assert isinstance(model, Model)
     assert isinstance(expression_profile, ExpressionProfile)
     assert isinstance(high_cutoff, numbers.Number)
     assert isinstance(low_cutoff, numbers.Number)
@@ -141,10 +137,9 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
     constraints = list()
     try:
 
-        with TimeMachine() as tm:
+        with model:
             if objective is not None:
-                tm(do=partial(setattr, model, "objective", objective),
-                   undo=partial(setattr, model, "objective", model.objective))
+                model.objective = objective
             fva_res = fva(model, reactions=list(reaction_profile.keys()),
                           fraction_of_optimum=fraction_of_optimum)
 
@@ -198,10 +193,9 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
         objective = model.solver.interface.Objective(Add(*[(y[0] + y[1]) for y in y_variables]) + Add(*x_variables),
                                                      direction="max")
 
-        with TimeMachine() as tm:
-            tm(do=partial(setattr, model, "objective", objective),
-               undo=partial(setattr, model, "objective", model.objective))
-            solution = model.solve()
+        with model:
+            model.objective = objective
+            solution = model.optimize()
             return IMATResult(solution.fluxes, solution.f, reaction_profile, low_cutoff, high_cutoff, epsilon)
 
     finally:

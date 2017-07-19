@@ -15,9 +15,7 @@
 from __future__ import absolute_import, print_function
 
 
-from functools import partial
-from cameo.solver_based_model import SolverBasedModel
-from cameo.util import TimeMachine
+from cobra import Model
 from driven.data_sets.fluxes import FluxConstraints
 from driven.flux_analysis.results import FluxBasedFluxDistribution
 
@@ -29,31 +27,28 @@ def fba(model, objective=None, distribution=None, relax=0.01, *args, **kwargs):
     Arguments
     ---------
 
-    model: SolverBasedModel
+    model : cobra.Model
         A constraint-based model
-    distribution: FluxConstraints
+    distribution : FluxConstraints
         A set of experimental or computational determined flux constraints
-    relax: float
+    objective : objective
+        Optional objective for the model
+    relax : float
         A relax value to make the computation feasible
     """
-    if not isinstance(model, SolverBasedModel):
+    if not isinstance(model, Model):
         raise ValueError("Argument model must be instance of SolverBasedModel, not %s" % model.__class__)
     if not isinstance(distribution, FluxConstraints):
         raise ValueError("Argument distribution must be instance of FluxConstraints, not %s" % distribution.__class__)
 
-    with TimeMachine() as tm:
+    with model:
         for reaction_id in distribution:
             reaction = model.reactions.get_by_id(reaction_id)
             bounds = distribution[reaction_id]
-            tm(do=partial(setattr, reaction, "upper_bound", bounds[1] + bounds[1] * relax),
-               undo=partial(setattr, reaction, "upper_bound", reaction.upper_bound))
-            tm(do=partial(setattr, reaction, "lower_bound", bounds[0] - bounds[0] * relax),
-               undo=partial(setattr, reaction, "lower_bound", reaction.lower_bound))
-
+            reaction.bounds = bounds[0] - bounds[0] * relax, bounds[1] + bounds[1] * relax
         if objective is not None:
-            tm(do=partial(setattr, model, "objective", objective),
-               undo=partial(setattr, model, "objective", model.objective))
+            model.objective = objective
 
-        solution = model.solve()
+        solution = model.optimize()
 
-    return FluxBasedFluxDistribution(solution.fluxes, distribution)
+    return FluxBasedFluxDistribution(solution.fluxes, distribution) # TODO bug here, missing arg
