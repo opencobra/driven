@@ -19,9 +19,7 @@ import numbers
 import six
 from sympy import Add
 
-from cameo import fba
-from cameo.flux_analysis import flux_variability_analysis as fva
-from cameo.flux_analysis.simulation import FluxDistributionResult
+from cobra.flux_analysis import flux_variability_analysis as fva
 from cobra import Model
 from driven.data_sets.expression_profile import ExpressionProfile
 from driven.data_sets.normalization import or2min_and2max
@@ -69,38 +67,37 @@ def gimme(model, expression_profile=None, cutoff=None, objective=None, objective
     assert isinstance(fraction_of_optimum, numbers.Number)
     assert isinstance(cutoff, numbers.Number)
 
-    objective = model.objective if objective is None else objective
-    objective_dist = fba(model, objective=objective) if objective_dist is None else objective_dist
-
-    assert isinstance(objective_dist, FluxDistributionResult)
-
-    if objective.direction == 'max':
-        fix_obj_constraint = model.solver.interface.Constraint(model.objective.expression,
-                                                               lb=fraction_of_optimum * objective_dist.objective_value,
-                                                               name="required metabolic functionalities")
-    else:
-        fix_obj_constraint = model.solver.interface.Constraint(model.objective.expression,
-                                                               ub=fraction_of_optimum * objective_dist.objective_value,
-                                                               name="required metabolic functionalities")
-    objective_terms = list()
-
-    condition = expression_profile.conditions[0] if condition is None else condition
-    not_measured_value = cutoff if not_measured_value is None else not_measured_value
-
-    reaction_profile = expression_profile.to_reaction_dict(condition, model, not_measured_value, normalization)
-    coefficients = {r: cutoff- exp if cutoff > exp else 0 for r, exp in six.iteritems(reaction_profile)}
-
-    for rid, coefficient in six.iteritems(coefficients):
-        reaction = model.reactions.get_by_id(rid)
-        if coefficient > 0:
-            objective_terms.append(coefficient * (reaction.forward_variable + reaction.reverse_variable))
-
     with model:
-        gimme_objective = model.solver.interface.Objective(Add(*objective_terms), direction="min")
+        if objective is not None:
+            model.objective = objective
+        objective_dist = model.optimize(raise_error=True) if objective_dist is None else objective_dist
+
+        if model.objective.direction == 'max':
+            fix_obj_constraint = model.problem.Constraint(model.objective.expression,
+                                                          lb=fraction_of_optimum * objective_dist.objective_value,
+                                                          name="required metabolic functionalities")
+        else:
+            fix_obj_constraint = model.problem.Constraint(model.objective.expression,
+                                                          ub=fraction_of_optimum * objective_dist.objective_value,
+                                                          name="required metabolic functionalities")
+        objective_terms = list()
+
+        condition = expression_profile.conditions[0] if condition is None else condition
+        not_measured_value = cutoff if not_measured_value is None else not_measured_value
+
+        reaction_profile = expression_profile.to_reaction_dict(condition, model, not_measured_value, normalization)
+        coefficients = {r: cutoff - exp if cutoff > exp else 0 for r, exp in six.iteritems(reaction_profile)}
+
+        for rid, coefficient in six.iteritems(coefficients):
+            reaction = model.reactions.get_by_id(rid)
+            if coefficient > 0:
+                objective_terms.append(coefficient * (reaction.forward_variable + reaction.reverse_variable))
+
+        gimme_objective = model.problem.Objective(Add(*objective_terms), direction="min")
         model.objective = gimme_objective
         model.add_cons_vars(fix_obj_constraint)
         solution = model.optimize()
-        return GimmeResult(solution.fluxes, solution.f, objective_dist.fluxes, reaction_profile, cutoff)
+        return GimmeResult(solution.fluxes, solution.objective_value, objective_dist.fluxes, reaction_profile, cutoff)
 
 
 def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsilon=0.1, condition=None,
@@ -152,14 +149,12 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
                 y_variables.append([y_neg, y_pos])
 
                 pos_constraint = model.solver.interface.Constraint(
-                    reaction.flux_expression + y_pos * (fva_res["lower_bound"][rid] - epsilon),
-                    lb=fva_res["lower_bound"][rid],
-                    name="pos_highly_%s" % rid)
+                    reaction.flux_expression + y_pos * (fva_res["minimum"][rid] - epsilon),
+                    lb=fva_res["minimum"][rid], name="pos_highly_%s" % rid)
 
                 neg_constraint = model.solver.interface.Constraint(
-                    reaction.flux_expression + y_neg * (fva_res["upper_bound"][rid] + epsilon),
-                    ub=fva_res["upper_bound"][rid],
-                    name="neg_highly_%s" % rid)
+                    reaction.flux_expression + y_neg * (fva_res["maximum"][rid] + epsilon),
+                    ub=fva_res["maximum"][rid], name="neg_highly_%s" % rid)
 
                 constraints.extend([pos_constraint, neg_constraint])
 
@@ -169,14 +164,12 @@ def imat(model, expression_profile=None, low_cutoff=0.25, high_cutoff=0.85, epsi
                 x_variables.append(x)
 
                 pos_constraint = model.solver.interface.Constraint(
-                    (1 - x) * fva_res["upper_bound"][rid] - reaction.flux_expression,
-                    lb=0,
-                    name="x_%s_upper" % rid)
+                    (1 - x) * fva_res["maximum"][rid] - reaction.flux_expression,
+                    lb=0, name="x_%s_upper" % rid)
 
                 neg_constraint = model.solver.interface.Constraint(
-                    (1 - x) * fva_res["lower_bound"][rid] - reaction.flux_expression,
-                    ub=0,
-                    name="x_%s_lower" % rid)
+                    (1 - x) * fva_res["minimum"][rid] - reaction.flux_expression,
+                    ub=0, name="x_%s_lower" % rid)
 
                 constraints.extend([pos_constraint, neg_constraint])
 
