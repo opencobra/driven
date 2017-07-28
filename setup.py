@@ -24,14 +24,14 @@ if on_rtd:
     requirements = ["numpydoc>=0.5"]
 else:
     requirements = [
-        'cameo',
-        'sympy',
-        'cobra',
-        'ipython',
-        'numpy',
+        'cameo>=0.11.0',
+        'sympy>=0.7.5',
+        'cobra>=0.6.2',
+        'ipython>=4.0',
+        'numpy>=1.9.2',
         'ggplot',
-        'six',
-        'pandas'
+        'six>=1.9.0',
+        'pandas>=0.16.2'
     ]
 
 setup(
