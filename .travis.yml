@@ -22,7 +22,6 @@ git:
 
 before_install:
 - travis_retry pip install --upgrade pip setuptools wheel pytest pytest-cov
-- pip install https://github.com/biosustain/cameo/archive/decaf2.zip
 
 install:
 - pip install .
