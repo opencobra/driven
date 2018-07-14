@@ -1,7 +1,18 @@
 # -*- coding: utf8 -*-
-
 """ Contains class definition for gene/protein expression data storage."""
+# Copyright 2015 Novo Nordisk Foundation Center for Biosustainability, DTU.
 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+# http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from __future__ import absolute_import
 
 from itertools import combinations
@@ -9,10 +20,11 @@ from itertools import combinations
 from numpy import ndarray, log2
 from pandas import DataFrame
 import seaborn as sns
+from sympy.parsing.ast_parser import parse_expr
+from sympy import Add, Mul, Max, Min, Symbol
 
 # from driven.stats import freedman_diaconis
 from driven.utils import get_common_start
-# from driven.vizualization.plotting import plotting
 
 
 class ExpressionProfile(object):
@@ -42,7 +54,11 @@ class ExpressionProfile(object):
         assert isinstance(identifiers, (list, ndarray)), array_error
         assert isinstance(conditions, (list, ndarray)), array_error
         assert isinstance(expression, ndarray), array_error
-        assert expression.shape == (len(identifiers), len(conditions)), dimension_error
+        dimension = (len(identifiers), len(conditions))
+        if len(identifiers) == 1:
+            assert expression.shape[0] == len(conditions)
+        else:
+            assert expression.shape == dimension, dimension_error
 
         self.identifiers = identifiers
         self.identifier_index = {iden: idx for idx, iden in
@@ -72,9 +88,7 @@ class ExpressionProfile(object):
         return self.expression[i, j]
 
     def __eq__(self, other):
-        if not isinstance(other, ExpressionProfile):
-            return False
-        else:
+        if isinstance(other, ExpressionProfile):
             if self._p_values is None and other.p_values is None:
                 return self.identifiers == other.identifiers and \
                        self.conditions == other.conditions and \
@@ -85,6 +99,8 @@ class ExpressionProfile(object):
                        self.conditions == other.conditions and \
                        (self._p_values == other._p_values).all() and \
                        (self.expression == other.expression).all()
+        else:
+            return False
 
     @classmethod
     def from_data_frame(cls, data_frame):
@@ -223,6 +239,38 @@ class ExpressionProfile(object):
 #                     diff[iden].append(0)
 #         return diff
 
+    def normalize_gene_to_rxn(self, reaction, gene_values,
+                              using):
+        """
+        Normalizes gene data to map to reactions (using GPR associations).
+
+        Parameters
+        ----------
+        reaction: cobra.Reaction
+            The reaction to map gene data to.
+        gene_values: dict
+            The dict of gene IDs as keys and expression values as values.
+        using: str
+            The method to use for normalizing the gene data.
+            "or2min_and2max": if more than one gene contribute as a complex,
+                              the max of the gene values is taken and if the
+                              genes act as isozymes, the min is taken.
+            "eflux": if more than one gene contribute as a complex, the min
+                     is taken and if the genes act as isozymes, the sum is
+                     taken.
+        Returns
+        -------
+        float
+        """
+        local_dict = {gene.id: Symbol(gene.id) for gene in reaction.genes}
+        rule = reaction.gene_reaction_rule.replace("and", "*").replace("or", "+")
+        expression = parse_expr(rule, local_dict)
+        if using == "or2min_and2max":
+            expression = expression.replace(Mul, Max).replace(Add, Min)
+        elif using == "eflux":
+            expression = expression.replace(Mul, Min)
+        return expression.subs(gene_values).evalf()
+
     def to_dict(self, condition):
         """
         Builds a dict with identifiers as keys and the expression values for
@@ -244,7 +292,8 @@ class ExpressionProfile(object):
         return {identifier: expression for identifier, expression in
                 zip(self.identifiers, self.expression[:, index])}
 
-    def to_reaction_dict(self, condition, model, cutoff=0.0):
+    def to_reaction_dict(self, condition, model, normalize_by="or2min_and2max",
+                         cutoff=0.0):
         """
         Builds a dict with reaction as keys and the expression values for the
         selected condition as values. If identifiers in the profile are genes,
@@ -258,6 +307,8 @@ class ExpressionProfile(object):
             The condition or the column index.
         model: cobra.Model
             The constraint-based model to obtain the GPR associations from.
+        normalize_by: str, optional (default "or2min_and2max")
+            The method to use for mapping gene values to reactions.
         cutoff: float, optional (default 0.0)
             The value to set for reaction(s) whose gene lacks a value in
             the profile.
@@ -271,8 +322,10 @@ class ExpressionProfile(object):
         for rxn in model.reactions:
             if rxn.genes is not None and any([gene.id in self.identifiers
                                               for gene in rxn.genes]):
-                rxn_exp[rxn.id] = {gene.id: gene_exp.get(gene.id, cutoff)
-                                   for gene in rxn.genes}
+                gene_values = {gene.id: gene_exp.get(gene.id, cutoff)
+                               for gene in rxn.genes}
+                rxn_exp[rxn.id] = self.normalize_gene_to_rxn(rxn, gene_values,
+                                                             using=normalize_by)
         return rxn_exp
 
 # TODO: Refine interface for a better graph; fix the bin to auto
