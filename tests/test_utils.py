@@ -1,10 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2013 Novo Nordisk Foundation Center for Biosustainability,
-# Technical University Denmark
-# Copyright (c) 2015 Novo Nordisk Foundation Center for Biosustainability,
-# Technical University Denmark
 # Copyright (c) 2018 Novo Nordisk Foundation Center for Biosustainability,
 # Technical University Denmark
 #
@@ -20,18 +15,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Install the driven package."""
+"""Test the expected outcomes of the utility functions."""
 
 from __future__ import absolute_import
 
-import versioneer
-from setuptools import setup
+import driven.utils as utils
 
 
-# All other arguments are defined in `setup.cfg`.
-setup(
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
-    # Temporary workaround for https://github.com/pypa/setuptools/issues/1136.
-    package_dir={"": "src"}
-)
+def test_show_versions(capsys):
+    """Ensure that `show_versions` prints expected output."""
+    utils.show_versions()
+    captured = capsys.readouterr()
+    lines = captured.out.split("\n")
+    assert lines[1].startswith("System Information")
+    assert lines[2].startswith("==================")
+    assert lines[3].startswith("OS")
+    assert lines[4].startswith("OS-release")
+    assert lines[5].startswith("Python")
+
+    assert lines[7].startswith("Package Versions")
+    assert lines[8].startswith("================")
+    assert any(l.startswith("driven") for l in lines[9:])

@@ -1,36 +1,67 @@
 language: python
-
 sudo: false
-
 python:
-- '2.7'
-- '3.4'
-- '3.5'
-- '3.6'
-
-branches:
- only:
- - master
- - devel
-  - /^[0-9]+\.[0-9]+\.[0-9]+[.0-9ab]*$/
-
-cache:
-- pip: true
+  - "2.7"
+  - "3.5"
+  - "3.6"
 
 git:
-  depth: 3
+  depth: 2
 
-before_install:
-- travis_retry pip install --upgrade pip setuptools wheel pytest pytest-cov
+cache:
+  pip: true
+
+branches:
+  only:
+    - master
+    - devel
+    - "/^\\d+\\.\\d+\\.\\d+[a]?\\d*$/"
+
+env:
+  global:
+    - GITHUB_REPO=biosustain/driven
+
+matrix:
+  fast_finish: true
 
 install:
-- pip install .
+  - pip install --upgrade pip setuptools wheel tox tox-travis
 
 script:
-- pytest -v -rsx --cov --cov-report=xml
+  - tox -- --cov=driven --cov-report xml --cov-report term
+  - bash <(curl -s https://codecov.io/bash)
 
-after_success:
-- codecov
+stages:
+  - test
+  - name: deploy
+    if: tag IS present
+
+jobs:
+  include:
+  - stage: deploy
+    install: skip
+    script:
+    - echo "Deploying driven."
+    deploy:
+    - provider: pypi
+      skip_cleanup: true
+      distributions: sdist bdist_wheel
+      user: midnighter
+      password: $PYPI_PASSWORD
+      on:
+        tags: true
+        repo: $GITHUB_REPO
+    - provider: releases
+      skip_cleanup: true
+      api_key: $GITHUB_TOKEN
+      body: "Please see https://github.com/${GITHUB_REPO}/blob/${TRAVIS_TAG}/CHANGELOG.rst for the full release notes."
+      on:
+        tags: true
+        repo: $GITHUB_REPO
 
 notifications:
-  slack: biosustain:8QjrEi8U59rrS3W8CtvOwc5T
+  email: false
+  slack:
+    on_success: change
+    on_failure: change
+    on_pull_requests: false
