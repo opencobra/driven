@@ -1,8 +1,5 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright (c) 2013 Novo Nordisk Foundation Center for Biosustainability,
-# Technical University Denmark
 # Copyright (c) 2015 Novo Nordisk Foundation Center for Biosustainability,
 # Technical University Denmark
 # Copyright (c) 2018 Novo Nordisk Foundation Center for Biosustainability,
@@ -20,18 +17,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Install the driven package."""
+"""Integrate omics' data with genome-scale constraint-based metabolic models."""
 
 from __future__ import absolute_import
 
-import versioneer
-from setuptools import setup
+__author__ = 'Novo Nordisk Foundation Center for Biosustainability, ' \
+             'Technical University Denmark'
+__email__ = 'niso@biosustain.dtu.dk'
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
 
-
-# All other arguments are defined in `setup.cfg`.
-setup(
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
-    # Temporary workaround for https://github.com/pypa/setuptools/issues/1136.
-    package_dir={"": "src"}
-)
+from driven.utils import *
