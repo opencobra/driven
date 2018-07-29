@@ -17,7 +17,7 @@ from __future__ import absolute_import
 
 from itertools import combinations
 
-from numpy import ndarray, log2
+from numpy import ndarray, log2, amin, amax
 from pandas import DataFrame
 import seaborn as sns
 from sympy.parsing.ast_parser import parse_expr
@@ -88,7 +88,9 @@ class ExpressionProfile(object):
         return self.expression[i, j]
 
     def __eq__(self, other):
-        if isinstance(other, ExpressionProfile):
+        if not isinstance(other, ExpressionProfile):
+            return False
+        else:
             if self._p_values is None and other.p_values is None:
                 return self.identifiers == other.identifiers and \
                        self.conditions == other.conditions and \
@@ -99,8 +101,6 @@ class ExpressionProfile(object):
                        self.conditions == other.conditions and \
                        (self._p_values == other._p_values).all() and \
                        (self.expression == other.expression).all()
-        else:
-            return False
 
     @classmethod
     def from_data_frame(cls, data_frame):
@@ -221,28 +221,39 @@ class ExpressionProfile(object):
     def p_values(self):
         self._p_values = None
 
-#     def differences(self, p_value=0.005):
-#         diff = {}
-#         for idx, iden in enumerate(self.identifiers):
-#             diff[iden] = []
-#             for i in range(1, len(self.conditions)):
-#                 start, end = self.expression[idx, i-1: i+1]
-#                 p = self.p_values[idx, i-1]
-#                 if p <= p_value:
-#                     if start < end:
-#                         diff[iden].append(+1)
-#                     elif start > end:
-#                         diff[iden].append(-1)
-#                     else:
-#                         diff[iden].append(0)
-#                 else:
-#                     diff[iden].append(0)
-#         return diff
-
-    def normalize_gene_to_rxn(self, reaction, gene_values,
-                              using):
+    def differences(self, p_value=0.005):
         """
-        Normalizes gene data to map to reactions (using GPR associations).
+        Calculates the differences based on the MADE method.
+
+        Parameters
+        ----------
+        p_value: float, optional (default 0.005)
+            A p-value to set as cutoff for calculation.
+
+        Returns
+        -------
+        dict
+        """
+        diff = {}
+        for idx, iden in enumerate(self.identifiers):
+            diff[iden] = []
+            for i in range(1, len(self.conditions)):
+                start, end = self.expression[idx, i-1: i+1]
+                p = self.p_values[idx, i-1]
+                if p <= p_value:
+                    if start < end:
+                        diff[iden].append(+1)
+                    elif start > end:
+                        diff[iden].append(-1)
+                    else:
+                        diff[iden].append(0)
+                else:
+                    diff[iden].append(0)
+        return diff
+
+    def map_gene_to_rxn(self, reaction, gene_values, by):
+        """
+        Maps gene data to reactions (using GPR associations).
 
         Parameters
         ----------
@@ -250,14 +261,15 @@ class ExpressionProfile(object):
             The reaction to map gene data to.
         gene_values: dict
             The dict of gene IDs as keys and expression values as values.
-        using: str
-            The method to use for normalizing the gene data.
-            "or2min_and2max": if more than one gene contribute as a complex,
-                              the max of the gene values is taken and if the
-                              genes act as isozymes, the min is taken.
-            "eflux": if more than one gene contribute as a complex, the min
-                     is taken and if the genes act as isozymes, the sum is
-                     taken.
+        by: str
+            The method to use for mapping the gene data.
+            "or2max_and2min": if more than one gene contribute as a complex,
+                              the min of the gene values is taken and if the
+                              genes act as isozymes, the max is taken.
+            "or2sum_and2min": if more than one gene contribute as a complex,
+                              the min of the gene values is taken and if the
+                              genes act as isozymes, the sum is taken.
+
         Returns
         -------
         float
@@ -265,9 +277,9 @@ class ExpressionProfile(object):
         local_dict = {gene.id: Symbol(gene.id) for gene in reaction.genes}
         rule = reaction.gene_reaction_rule.replace("and", "*").replace("or", "+")
         expression = parse_expr(rule, local_dict)
-        if using == "or2min_and2max":
-            expression = expression.replace(Mul, Max).replace(Add, Min)
-        elif using == "eflux":
+        if by == "or2max_and2min":
+            expression = expression.replace(Mul, Min).replace(Add, Max)
+        elif by == "or2sum_and2min":
             expression = expression.replace(Mul, Min)
         return expression.subs(gene_values).evalf()
 
@@ -292,7 +304,7 @@ class ExpressionProfile(object):
         return {identifier: expression for identifier, expression in
                 zip(self.identifiers, self.expression[:, index])}
 
-    def to_reaction_dict(self, condition, model, normalize_by="or2min_and2max",
+    def to_reaction_dict(self, condition, model, map_by="or2max_and2min",
                          cutoff=0.0):
         """
         Builds a dict with reaction as keys and the expression values for the
@@ -307,7 +319,7 @@ class ExpressionProfile(object):
             The condition or the column index.
         model: cobra.Model
             The constraint-based model to obtain the GPR associations from.
-        normalize_by: str, optional (default "or2min_and2max")
+        map_by: str, optional (default "or2max_and2min")
             The method to use for mapping gene values to reactions.
         cutoff: float, optional (default 0.0)
             The value to set for reaction(s) whose gene lacks a value in
@@ -324,8 +336,8 @@ class ExpressionProfile(object):
                                               for gene in rxn.genes]):
                 gene_values = {gene.id: gene_exp.get(gene.id, cutoff)
                                for gene in rxn.genes}
-                rxn_exp[rxn.id] = self.normalize_gene_to_rxn(rxn, gene_values,
-                                                             using=normalize_by)
+                rxn_exp[rxn.id] = self.map_gene_to_rxn(rxn, gene_values,
+                                                       by=map_by)
         return rxn_exp
 
 # TODO: Refine interface for a better graph; fix the bin to auto
@@ -439,9 +451,11 @@ class ExpressionProfile(object):
         """
         if condition is None:
             values = self[:, :]
-        else:
+        elif isinstance(condition, int):
             values = self[:, condition]
-        return min(values), max(values)
+        elif isinstance(condition, str):
+            values = self[:, self._condition_index[condition]]
+        return amin(values), amax(values)
 
     def normalize(self, using="log2"):
         """
@@ -458,6 +472,7 @@ class ExpressionProfile(object):
 
     def _repr_html_(self):
         return self.data_frame._repr_html_()
+
 #     def bin_width(self, condition=None, min_val=None, max_val=None):
 #         if condition is None:
 #             values = self[:, :]
