@@ -14,3 +14,4 @@
 # limitations under the License.
 from driven.flux_analysis.gimme import gimme
 from driven.flux_analysis.imat import imat
+from drive.flux_analysis.gim3e import gim3e
