@@ -17,13 +17,12 @@ from __future__ import absolute_import
 
 from itertools import combinations
 
-from numpy import ndarray, log2, amin, amax
-from pandas import DataFrame
-import seaborn as sns
+import numpy as np
+import pandas as pd
+import altair as alt
 from sympy.parsing.ast_parser import parse_expr
 from sympy import Add, Mul, Max, Min, Symbol
 
-# from driven.stats import freedman_diaconis
 from driven.utils import get_common_start
 
 
@@ -51,9 +50,9 @@ class ExpressionProfile(object):
     def __init__(self, identifiers, conditions, expression, p_values=None):
         array_error = "Not an array-like structure."
         dimension_error = "Expression data and label dimensions don't match."
-        assert isinstance(identifiers, (list, ndarray)), array_error
-        assert isinstance(conditions, (list, ndarray)), array_error
-        assert isinstance(expression, ndarray), array_error
+        assert isinstance(identifiers, (list, np.ndarray)), array_error
+        assert isinstance(conditions, (list, np.ndarray)), array_error
+        assert isinstance(expression, np.ndarray), array_error
         dimension = (len(identifiers), len(conditions))
         if len(identifiers) == 1:
             assert expression.shape[0] == len(conditions)
@@ -79,7 +78,8 @@ class ExpressionProfile(object):
         if isinstance(item[0], str) and isinstance(item[1], str):
             i = self.identifier_index[item[0]]
             j = self._condition_index[item[1]]
-        elif isinstance(item[0], (slice, int)) and isinstance(item[1], (slice, int)):
+        elif isinstance(item[0], (slice, int)) and isinstance(item[1],
+                                                              (slice, int)):
             i = item[0]
             j = item[1]
         else:
@@ -118,7 +118,6 @@ class ExpressionProfile(object):
         Returns
         -------
         ExpressionProfile
-            The expression profile built from the DataFrame.
         """
         columns = data_frame.columns.tolist()
         conditions = [c for c in columns if "p-value" not in c]
@@ -149,14 +148,13 @@ class ExpressionProfile(object):
         Returns
         -------
         ExpressionProfile
-            The expression profile built from the file.
-
         """
-        data = DataFrame.from_csv(file_path, sep=sep)
+        data = pd.DataFrame.from_csv(file_path, sep=sep)
         if replicates:
             columns = data.columns
-            data = DataFrame([data[columns[i:i+replicates]].median(axis=1)
-                              for i in range(0, len(columns), replicates)]).transpose()
+            data = pd.DataFrame([data[columns[i:i+replicates]].median(axis=1)
+                                for i in range(0, len(columns), replicates)]
+                                ).transpose()
             data.columns = [get_common_start(*columns[i:i+replicates].tolist())
                             for i in range(0, len(columns), replicates)]
         return cls.from_data_frame(data)
@@ -171,14 +169,14 @@ class ExpressionProfile(object):
         pandas.DataFrame
         """
         if self._p_values is None:
-            return DataFrame(self.expression,
-                             index=self.identifiers,
-                             columns=self.conditions)
+            return pd.DataFrame(self.expression,
+                                index=self.identifiers,
+                                columns=self.conditions)
 
         else:
-            return DataFrame(self.expression + self.p_values,
-                             index=self.identifiers,
-                             columns=self.conditions + self.p_value_columns)
+            return pd.DataFrame(self.expression + self.p_values,
+                                index=self.identifiers,
+                                columns=self.conditions + self.p_value_columns)
 
     @property
     def p_value_columns(self):
@@ -190,7 +188,8 @@ class ExpressionProfile(object):
         -------
         list
         """
-        return ["%s %s p-value" % c for c in combinations(self.conditions, 2)]
+        return ["{} {} p-value".format(c[0], c[1])
+                for c in combinations(self.conditions, 2)]
 
     @property
     def p_values(self):
@@ -200,7 +199,11 @@ class ExpressionProfile(object):
 
         Returns
         -------
-        ndarray
+        numpy.ndarray
+
+        Raises
+        ------
+        ValueError
         """
         if not self._p_values:
             raise ValueError("No p-values defined.")
@@ -209,7 +212,7 @@ class ExpressionProfile(object):
 
     @p_values.setter
     def p_values(self, p_values):
-        assert isinstance(p_values, (ndarray, type(None)))
+        assert isinstance(p_values, (np.ndarray, type(None)))
         if p_values is not None:
             if p_values.shape[1] != len(self.p_value_columns):
                 raise ValueError("Argument p-values do not cover all \
@@ -251,7 +254,7 @@ class ExpressionProfile(object):
                     diff[iden].append(0)
         return diff
 
-    def map_gene_to_rxn(self, reaction, gene_values, by):
+    def _map_gene_to_rxn(self, reaction, gene_values, by):
         """
         Maps gene data to reactions (using GPR associations).
 
@@ -275,7 +278,8 @@ class ExpressionProfile(object):
         float
         """
         local_dict = {gene.id: Symbol(gene.id) for gene in reaction.genes}
-        rule = reaction.gene_reaction_rule.replace("and", "*").replace("or", "+")
+        rule = reaction.gene_reaction_rule.replace("and", "*").replace("or",
+                                                                       "+")
         expression = parse_expr(rule, local_dict)
         if by == "or2max_and2min":
             expression = expression.replace(Mul, Min).replace(Add, Max)
@@ -304,8 +308,7 @@ class ExpressionProfile(object):
         return {identifier: expression for identifier, expression in
                 zip(self.identifiers, self.expression[:, index])}
 
-    def to_reaction_dict(self, condition, model, map_by="or2max_and2min",
-                         cutoff=0.0):
+    def to_reaction_dict(self, condition, model, **kwargs):
         """
         Builds a dict with reaction as keys and the expression values for the
         selected condition as values. If identifiers in the profile are genes,
@@ -329,6 +332,8 @@ class ExpressionProfile(object):
         -------
         dict
         """
+        cutoff = 0.0
+        map_by = "or2max_and2min"
         gene_exp = self.to_dict(condition)
         rxn_exp = {}
         for rxn in model.reactions:
@@ -336,33 +341,31 @@ class ExpressionProfile(object):
                                               for gene in rxn.genes]):
                 gene_values = {gene.id: gene_exp.get(gene.id, cutoff)
                                for gene in rxn.genes}
-                rxn_exp[rxn.id] = self.map_gene_to_rxn(rxn, gene_values,
-                                                       by=map_by)
+                rxn_exp[rxn.id] = self._map_gene_to_rxn(rxn, gene_values,
+                                                        by=map_by)
         return rxn_exp
 
-# TODO: Refine interface for a better graph; fix the bin to auto
-    def hist(self, bins=10, figsize=(6, 6)):
+    def hist(self, **kwargs):
         """
         Plots an intensity histogram of the expression data.
 
-        Parameters
-        ----------
-        bins: int, optional (default "auto")
-            The number of bins to use.
-        figsize: tuple (width, height) in inches
-            The figure size of the plot.
-
         Returns
         -------
-        matplotlib.axes._subplots.AxesSubplot
+        altair.Chart
         """
-        hist = self.data_frame.plot.hist(bins=bins, figsize=figsize,
-                                         legend=True, alpha=0.5,
-                                         title="Histogram of expression \
-                                                values")
-        return hist
+        df = self.data_frame.melt()
+        hist = alt.Chart(df, title="Histogram of expression values", width=400,
+                         height=300).mark_bar().encode(
+                             x=alt.X("value:Q", bin=True,
+                                     title="Expression values"),
+                             y="count()")
+        rule = alt.Chart(df).mark_rule(color='red').encode(
+            x="mean(value):Q",
+            size=alt.value(3),
+            tooltip="mean(value)")
+        return hist + rule
 
-    def scatter(self, x, y, figsize=(6, 6), color="#AFDCEC"):
+    def scatter(self, x, y, **kwargs):
         """
         Generates a scatter plot for comparison between two conditions.
 
@@ -372,14 +375,10 @@ class ExpressionProfile(object):
             The condition to plot on X-axis.
         y: str
             The condition to plot on Y-axis.
-        figsize: tuple (width, height) in inches
-            The figure size of the plot.
-        color: str
-            Either name of color like 'red' or hex code like '#AFDCEC'
 
         Returns
         -------
-        matplotlib.axes._subplots.AxesSubplot
+        altair.Chart
 
         Raises
         ------
@@ -390,50 +389,78 @@ class ExpressionProfile(object):
                                   condition.")
 
         if isinstance(x, str) and isinstance(y, str):
-            scatter = self.data_frame.plot.scatter(x, y, c=color,
-                                                   figsize=figsize,
-                                                   title="Expression values \
-                                                          {0} vs. \
-                                                          {1}".format(x, y))
+            df = self.data_frame.reset_index()
+            scatter = alt.Chart(df, title="Expression values {} vs. \
+                                {}".format(x, y), width=400, height=300
+                                ).mark_point().encode(
+                                    x="{}:{}".format(x, "Q"),
+                                    y="{}:{}".format(y, "Q"),
+                                    tooltip=[x, y],
+                                    color="index:N",
+                                    shape=alt.Color("index:N",
+                                                    title="Identifiers")
+                                ).interactive()
             return scatter
         else:
             raise AssertionError("Column names should be of type str.")
 
-    def heatmap(self):
+    def heatmap(self, **kwargs):
         """
         Generates a heatmap from the expression profile.
 
-        Parameters
-        ----------
-        figsize: tuple (width, height) in inches
-            The figure size of the plot.
-
         Returns
         -------
-        matplotlib.axes._subplots.AxesSubplot
+        altair.Chart
         """
-        heatmap = sns.heatmap(self.data_frame, square=True, cmap="RdYlGn_r")
-        heatmap.set_title("Expression profile heatmap")
+        df = self.data_frame.reset_index().melt(id_vars='index',
+                                                var_name='x')
+        heatmap = alt.Chart(df, title="Expression profile heatmap", width=400,
+                            height=300).mark_rect().encode(
+                                x=alt.X('x:O', title="Conditions"),
+                                y=alt.Y('index:O', title="Identifiers"),
+                                color='value:Q')
         return heatmap
 
-    def box(self, by=None, figsize=(6, 6)):
+    def box(self, **kwargs):
         """
         Generates a box plot for comparison between conditions.
 
-        Parameters
-        ----------
-        by: str or None (default None)
-            The condition to group by.
-        figsize: tuple (width, height) in inches
-            The figure size of the plot.
-
         Returns
         -------
-        matplotlib.axes._subplots.AxesSubplot
+        altair.Chart
         """
-        box = self.data_frame.plot.box(by=by, figsize=figsize,
-                                       title="Box plot of expression values")
-        return box
+        df = self.data_frame.melt()
+        lower_box = 'q1(value):Q'
+        lower_whisker = 'min(value):Q'
+        upper_box = 'q3(value):Q'
+        upper_whisker = 'max(value):Q'
+
+        lower_plot = alt.Chart(df, title="Box plot of expression values",
+                               width=400, height=300).mark_rule().encode(
+                                   y=alt.Y(lower_whisker,
+                                           axis=alt.Axis(title="Expression \
+                                                         value")),
+                                   y2=lower_box,
+                                   x=alt.X('variable:O',
+                                           axis=alt.Axis(title="Conditions")))
+
+        middle_plot = alt.Chart(df).mark_bar(size=10.0).encode(
+            y=lower_box,
+            y2=upper_box,
+            x='variable:O')
+
+        upper_plot = alt.Chart(df).mark_rule().encode(
+            y=upper_whisker,
+            y2=upper_box,
+            x='variable:O')
+
+        middle_tick = alt.Chart(df).mark_tick(
+            color='white',
+            size=5.0).encode(
+            y='median(value):Q',
+            x='variable:O')
+
+        return lower_plot + middle_plot + upper_plot + middle_tick
 
     def minmax(self, condition=None):
         """
@@ -455,34 +482,7 @@ class ExpressionProfile(object):
             values = self[:, condition]
         elif isinstance(condition, str):
             values = self[:, self._condition_index[condition]]
-        return amin(values), amax(values)
-
-    def normalize(self, using="log2"):
-        """
-        Normalizes the expression data using the chosen method.
-        By default uses log2 for the purpose.
-
-        Parameters
-        ---------
-        using: str, optional (default "log2")
-            The method to use for normalizing the expression data.
-        """
-        if using == "log2":
-            self.expression = log2(self.expression)
+        return np.amin(values), np.amax(values)
 
     def _repr_html_(self):
         return self.data_frame._repr_html_()
-
-#     def bin_width(self, condition=None, min_val=None, max_val=None):
-#         if condition is None:
-#             values = self[:, :]
-#         else:
-#             values = self[:, condition]
-
-#         if min_val:
-#             values = values[values >= min_val]
-#         if max_val:
-#             values = values[values <= max_val]
-
-#         values = values[:, condition]
-#         return freedman_diaconis(values)
