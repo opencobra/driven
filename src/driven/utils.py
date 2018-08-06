@@ -54,6 +54,3 @@ def get_common_start(*seq_list):
     m = [all_same(seq) for seq in zip(*seq_list)]  # Map the matching elements
     m.append(False)                                # Guard in case all the sequences match
     return seq_list[0][0:m.index(False)]           # Truncate before first mismatch
-
-
-

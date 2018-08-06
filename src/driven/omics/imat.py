@@ -19,9 +19,9 @@
 
 from __future__ import absolute_import
 
-import six
 import cobra
 from optlang.symbolics import add
+from six import iteritems
 
 
 __all__ = ("imat",)
@@ -70,7 +70,7 @@ def imat(model, expression_profile, cutoff, epsilon=1, condition=0):
         prob = model.problem
         rxn_profile = expression_profile.to_reaction_dict(condition, model)
 
-        for rxn_id, expression in six.iteritems(rxn_profile):
+        for rxn_id, expression in iteritems(rxn_profile):
             rxn = model.reactions.get_by_id(rxn_id)
             if expression > high_cutoff:
                 y_pos = prob.Variable("y_pos_{}".format(rxn_id), type="binary")

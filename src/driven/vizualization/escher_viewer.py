@@ -23,7 +23,6 @@ from IPython.display import display
 from pandas import DataFrame
 
 
-
 class EscherViewer(object):
     def __init__(self, data_frame, map_name, color_scales, normalization_functions):
         assert isinstance(data_frame, DataFrame)
