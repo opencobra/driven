@@ -25,7 +25,6 @@ from sympy import Add, Mul, Max, Min, Symbol
 
 from driven.utils import get_common_start
 
-
 class ExpressionProfile(object):
     """
     Representation of an Expression profile. It can be RNA-Seq, Proteomics,
@@ -132,7 +131,7 @@ class ExpressionProfile(object):
         return ExpressionProfile(identifiers, conditions, expression, p_values)
 
     @classmethod
-    def from_csv(cls, file_path, sep=",", replicates=None):
+    def from_csv(cls, file_path, replicates=None, **kwargs):
         """
         Reads expression data from a comma separated values (csv) file.
 
@@ -140,8 +139,6 @@ class ExpressionProfile(object):
         ----------
         file_path: str
             The file path.
-        sep: str, optional (default ",")
-            The delimiter to use for file parsing.
         replicates: int, optional (default None)
             Number of replicates. (uses median of replicates if not None).
 
@@ -149,7 +146,7 @@ class ExpressionProfile(object):
         -------
         ExpressionProfile
         """
-        data = pd.DataFrame.from_csv(file_path, sep=sep)
+        data = pd.read_csv(file_path, **kwargs)
         if replicates:
             columns = data.columns
             data = pd.DataFrame([data[columns[i:i+replicates]].median(axis=1)
@@ -169,14 +166,16 @@ class ExpressionProfile(object):
         pandas.DataFrame
         """
         if self._p_values is None:
-            return pd.DataFrame(self.expression,
-                                index=self.identifiers,
-                                columns=self.conditions)
-
+            expression = self.expression
+            conditions = self.conditions
         else:
-            return pd.DataFrame(self.expression + self.p_values,
-                                index=self.identifiers,
-                                columns=self.conditions + self.p_value_columns)
+            expression = np.concatenate((self.expression, self.p_values),
+                                        axis=1)
+            conditions = self.conditions + self.p_value_columns
+
+        return pd.DataFrame(expression,
+                            index=self.identifiers,
+                            columns=conditions)
 
     @property
     def p_value_columns(self):
@@ -205,7 +204,7 @@ class ExpressionProfile(object):
         ------
         ValueError
         """
-        if not self._p_values:
+        if not self._p_values.all():
             raise ValueError("No p-values defined.")
         else:
             return self._p_values
