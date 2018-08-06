@@ -14,15 +14,15 @@
 
 from __future__ import absolute_import, print_function
 
-from sympy import Symbol
-from sympy.parsing.ast_parser import parse_expr
-
 from cobra import Reaction
+from optlang.symbolics import Symbol
+from sympy.parsing.ast_parser import parse_expr
 
 
 def __gene_to_expression__(reaction):
     local_dict = {g.id: Symbol(g.id) for g in reaction.genes}
     rule = reaction._gene_reaction_rule.replace("and", "+").replace("or", "*")
     return parse_expr(rule, local_dict)
+
 
 Reaction.gene_expression = __gene_to_expression__

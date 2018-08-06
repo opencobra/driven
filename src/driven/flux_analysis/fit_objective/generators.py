@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
+
 
 __all__ = ["zero_one_binary_generator", "zero_one_linear_generator"]
 

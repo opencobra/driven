@@ -18,10 +18,10 @@ import os
 
 import numpy as np
 import six
+from cameo.visualization.escher_ext import NotebookBuilder
 from IPython.display import display
 from pandas import DataFrame
 
-from cameo.visualization.escher_ext import NotebookBuilder
 
 
 class EscherViewer(object):
