@@ -1,4 +1,20 @@
 # -*- coding: utf-8 -*-
+
+# Copyright 2015 Novo Nordisk Foundation Center for Biosustainability, DTU.
+# Copyright 2018 Synchon Mandal.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+# http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Contains function to perform iMAT"""
 
 from __future__ import absolute_import
@@ -7,7 +23,8 @@ import six
 import cobra
 from optlang.symbolics import add
 
-from driven.data_sets import ExpressionProfile
+
+__all__ = ("imat",)
 
 
 def imat(model, expression_profile, cutoff, epsilon=1, condition=0):
@@ -41,13 +58,7 @@ def imat(model, expression_profile, cutoff, epsilon=1, condition=0):
            Nature biotechnology. 26. 1003-10.
            doi:10.1038/nbt.1487.
     """
-
-    assert isinstance(model, cobra.Model)
-    assert isinstance(expression_profile, ExpressionProfile)
-    assert isinstance(cutoff, tuple)
     low_cutoff, high_cutoff = cutoff
-    assert isinstance(low_cutoff, float)
-    assert isinstance(high_cutoff, float)
     if low_cutoff > high_cutoff:
         raise ValueError("Low cutoff value greater than high cutoff.")
 
@@ -97,4 +108,4 @@ def imat(model, expression_profile, cutoff, epsilon=1, condition=0):
                                          sloppy=True, direction="max")
 
         sol = model.optimize()
-        return (model, sol)
+        return model, sol
