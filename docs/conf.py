@@ -144,7 +144,8 @@ latex_documents = [
         master_doc,
         'driven.tex',
         'Driven Documentation',
-        'Novo Nordisk Foundation Center for Biosustainability, Technical University Denmark',
+        'Novo Nordisk Foundation Center for Biosustainability, Technical '
+        'University Denmark',
         'manual'
     ),
 ]
@@ -162,7 +163,9 @@ texinfo_documents = [
         'Driven Documentation',
         author,
         'Driven',
-        'Implementation of novel and state-of-the-art methods in order to integrate omics' data with genome-scale constraint-based metabolic models.',
+        "Implementation of novel and state-of-the-art methods in order to "
+        "integrate omics' data with genome-scale constraint-based metabolic "
+        "models.",
         'Miscellaneous'
     ),
 ]
