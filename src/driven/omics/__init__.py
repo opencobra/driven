@@ -1,4 +1,7 @@
-# Copyright 2015 Novo Nordisk Foundation Center for Biosustainability, DTU.
+# -*- coding: utf-8 -*-
+
+# Copyright 2018 Novo Nordisk Foundation Center for Biosustainability,
+# Technical University of Denmark.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import absolute_import, print_function
+"""Provide methods for integrating multiple kinds of 'omics data."""
 
-from driven.flux_analysis.transcriptomics import gimme, imat
+from __future__ import absolute_import
 
-__all__ = ["gimme", "imat"]
+from driven.omics.gimme import *
+from driven.omics.imat import *

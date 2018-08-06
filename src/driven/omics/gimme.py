@@ -1,5 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Contains function to perform GIMME"""
+
+# Copyright 2015 Novo Nordisk Foundation Center for Biosustainability, DTU.
+# Copyright 2018 Synchon Mandal.
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+# http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Implement GIMME."""
 
 from __future__ import absolute_import
 
@@ -7,13 +23,14 @@ import six
 import cobra
 from optlang.symbolics import Zero
 
-from driven.data_sets import ExpressionProfile
+
+__all__ = ("gimme",)
 
 
 def gimme(model, expression_profile, cutoff, fraction_of_optimum=0.9,
           condition=0):
     """
-    Gene Inactivity Moderated by Metabolism and Expression (GIMME)[1]
+    Gene Inactivity Moderated by Metabolism and Expression (GIMME) [1]_.
 
     Parameters
     ----------
@@ -41,13 +58,6 @@ def gimme(model, expression_profile, cutoff, fraction_of_optimum=0.9,
            PLoS Computational Biology, 4(5), e1000082.
            doi:10.1371/journal.pcbi.1000082
     """
-
-    assert isinstance(model, cobra.Model)
-    assert isinstance(expression_profile, ExpressionProfile)
-    assert isinstance(cutoff, float)
-    assert isinstance(fraction_of_optimum, float)
-    assert isinstance(condition, (str, int))
-
     with model:
         solution = model.slim_optimize()
         prob = model.problem
@@ -75,4 +85,4 @@ def gimme(model, expression_profile, cutoff, fraction_of_optimum=0.9,
         model.objective = prob.Objective(Zero, sloppy=True, direction="min")
         model.objective.set_linear_coefficients({v: c for v, c in obj_vars})
         sol = model.optimize()
-        return (model, sol)
+        return model, sol
