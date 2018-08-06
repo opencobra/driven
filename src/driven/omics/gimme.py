@@ -19,9 +19,9 @@
 
 from __future__ import absolute_import
 
-import six
 import cobra
 from optlang.symbolics import Zero
+from six import iteritems
 
 
 __all__ = ("gimme",)
@@ -74,10 +74,10 @@ def gimme(model, expression_profile, cutoff, fraction_of_optimum=0.9,
         model.add_cons_vars(fix_obj_const)
 
         coefficients = {rxn_id: cutoff - expression
-                        for rxn_id, expression in six.iteritems(rxn_profile)
+                        for rxn_id, expression in iteritems(rxn_profile)
                         if cutoff > expression}
         obj_vars = []
-        for rxn_id, coefficient in six.iteritems(coefficients):
+        for rxn_id, coefficient in iteritems(coefficients):
             rxn = model.reactions.get_by_id(rxn_id)
             obj_vars.append((rxn.forward_variable, coefficient))
             obj_vars.append((rxn.reverse_variable, coefficient))

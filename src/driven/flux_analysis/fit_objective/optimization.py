@@ -16,19 +16,16 @@ from __future__ import absolute_import, print_function
 
 from random import Random
 
-import sympy
+from cameo import config
 from inspyred.ec.emo import NSGA2, Pareto
 
-from cameo import config
-from driven.flux_analysis.fit_objective.generators import zero_one_binary_generator, zero_one_linear_generator
-from driven.flux_analysis.fit_objective.variators import zero_one_binary_variator, zero_one_linear_variator
+from driven.flux_analysis.fit_objective.generators import (
+    zero_one_binary_generator, zero_one_linear_generator)
+from driven.flux_analysis.fit_objective.variators import (
+    zero_one_binary_variator, zero_one_linear_variator)
+
 
 __all__ = ["FitProfileStrategy"]
-
-One = sympy.singleton.S.One
-Add = sympy.Add._from_args
-Mul = sympy.Mul._from_args
-Real = sympy.RealNumber
 
 
 def evaluate(model, candidates, coefficients, profiles, evaluators, **kwargs):

@@ -17,13 +17,11 @@ from __future__ import absolute_import
 
 from itertools import combinations
 
+import altair as alt
 import numpy as np
 import pandas as pd
-import altair as alt
+from optlang.symbolics import Add, Mul, Symbol
 from sympy.parsing.ast_parser import parse_expr
-from sympy import Add, Mul, Max, Min, Symbol
-
-from driven.utils import get_common_start
 
 class ExpressionProfile(object):
     """

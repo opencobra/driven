@@ -14,17 +14,12 @@
 
 from __future__ import absolute_import, print_function
 
-import sympy
-
 from cobra import Reaction
 from cobra.flux_analysis import find_essential_genes
+from optlang.symbolics import Add, Mul, Real
+
 
 __all__ = ["essential_genes_profile_evaluator", "essential_reactions_profile_evaluator"]
-
-One = sympy.singleton.S.One
-Add = sympy.Add._from_args
-Mul = sympy.Mul._from_args
-Real = sympy.RealNumber
 
 
 def _essential_profile_assertion_score(actual, expected):

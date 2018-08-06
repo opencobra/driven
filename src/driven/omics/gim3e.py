@@ -18,10 +18,10 @@
 
 from __future__ import absolute_import
 
-import six
 import cobra
-from optlang.symbolics import Zero
+import six
 from cobra.util import fix_objective_as_constraint
+from optlang.symbolics import Zero
 
 from driven.data_sets import ExpressionProfile
 
