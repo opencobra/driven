@@ -33,24 +33,16 @@ def show_versions():
 
 
 def all_same(seq):
-    """
-    Determines whether all the elements in a sequence are the same.
-
-    seq: list
-    """
-
-    # Compare all the elements to the first in the sequence,
-    # then do a logical and (min) to see if they all matched.
-    return min([elem == seq[0] for elem in seq]+[True])
+    """Determine whether all the elements in a sequence are the same."""
+    # Compare all the elements to the first in the sequence.
+    return all(elem == seq[0] for elem in seq)
 
 
 def get_common_start(*seq_list):
-    """
-    Returns the common prefix of a list of sequences.
-
-    Raises
-        an exception if the list is empty.
-    """
-    m = [all_same(seq) for seq in zip(*seq_list)]  # Map the matching elements
-    m.append(False)                                # Guard in case all the sequences match
-    return seq_list[0][0:m.index(False)]           # Truncate before first mismatch
+    """Return the common prefix of a list of sequences."""
+    # Map the matching elements.
+    m = [all_same(seq) for seq in zip(*seq_list)]
+    # Append a guard in case all the sequences match.
+    m.append(False)
+    # Truncate the sequence before first mismatch.
+    return seq_list[0][0:m.index(False)]

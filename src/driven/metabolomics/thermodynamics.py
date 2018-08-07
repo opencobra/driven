@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+
 # Copyright 2015 Novo Nordisk Foundation Center for Biosustainability, DTU.
+# Copyright 2018 Novo Nordisk Foundation Center for Biosustainability,
+# Technical University of Denmark.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,16 +16,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Implement thermodynamics-based metabolic flux analysis."""
+
 from __future__ import absolute_import, print_function
 
 
 def tmfa(model, objective=None, delta_gs=None, K=None, *args, **kwargs):
     """
-    Thermodynamics-based Metabolic Flux Analysis. [1]
+    Apply Thermodynamics-based Metabolic Flux Analysis [1]_.
 
-    Arguments
-    ---------
-
+    Parameters
+    ----------
     objective: a compatible objective
         The objective function of the simulation
     delta_gs: dict
@@ -32,8 +36,11 @@ def tmfa(model, objective=None, delta_gs=None, K=None, *args, **kwargs):
 
     References
     ----------
-    .. [1] Henry, C. S., Broadbelt, L. J. and Hatzimanikatis, V. (2007). Thermodynamics-based metabolic flux analysis.
-    Biophysical Journal, 92(5), 1792–1805. doi:10.1529/biophysj.106.093138
+    .. [1] Henry, C. S., Broadbelt, L. J. and Hatzimanikatis, V. (2007).
+           Thermodynamics-based metabolic flux analysis.
+           Biophysical Journal, 92(5), 1792–1805.
+           doi:10.1529/biophysj.106.093138
+
     """
     variables = []
     constraints = []
@@ -41,24 +48,28 @@ def tmfa(model, objective=None, delta_gs=None, K=None, *args, **kwargs):
     try:
         for reaction in model.reactions:
             if reaction.id in delta_gs:
-                z = model.solver.interface.Variable("z_%s" % reaction.id, type='binary')
+                z = model.solver.interface.Variable(
+                    "z_%s" % reaction.id, type='binary')
                 variables.append(z)
 
-                k_constraint = model.solver.interface.Constraint(delta_gs[reaction.id] - K + K*z,
-                                                                 ub=0,
-                                                                 name="second_law_constraint_%s" % reaction.id,
-                                                                 sloppy=True)
+                k_constraint = model.solver.interface.Constraint(
+                    delta_gs[reaction.id] - K + K*z,
+                    ub=0,
+                    name="second_law_constraint_%s" % reaction.id,
+                    sloppy=True)
 
-                flux_constraint = model.solver.interface.Constraint(z * reaction.upper_bound - reaction.flux_expression,
-                                                                    lb=0,
-                                                                    name="thermo_flux_constraint_%s" % reaction.id,
-                                                                    sloppy=True)
+                flux_constraint = model.solver.interface.Constraint(
+                    z * reaction.upper_bound - reaction.flux_expression,
+                    lb=0,
+                    name="thermo_flux_constraint_%s" % reaction.id,
+                    sloppy=True)
 
                 constraints.append([k_constraint, flux_constraint])
         # TODO: Not sure what this is meant to do..
         # with TimeMachine() as tm:
         #     tm(do=partial(setattr, model, 'objective', objective),
-        #        undo=partial(setattr, model, 'objective', model.objective.expression))
+        #        undo=partial(setattr, model, 'objective',
+        #                     model.objective.expression))
         #     tm(do=partial(model.solver.add, variables),
         #        undo=partial(model.solver.remove, variables))
         #     tm(do=partial(model.solver.add, constraints),

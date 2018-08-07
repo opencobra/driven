@@ -15,11 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Contains function to perform iMAT"""
+"""Implement the integrative metabolic analysis tool."""
 
 from __future__ import absolute_import
 
-import cobra
 from optlang.symbolics import add
 from six import iteritems
 
@@ -29,7 +28,7 @@ __all__ = ("imat",)
 
 def imat(model, expression_profile, cutoff, epsilon=1, condition=0):
     """
-    Integrative Metabolic Analysis Tool[1]
+    Integrative Metabolic Analysis Tool [1]_.
 
     Parameters
     ----------
@@ -57,6 +56,7 @@ def imat(model, expression_profile, cutoff, epsilon=1, condition=0):
            Network-based prediction of human tissue-specific metabolism.
            Nature biotechnology. 26. 1003-10.
            doi:10.1038/nbt.1487.
+
     """
     low_cutoff, high_cutoff = cutoff
     if low_cutoff > high_cutoff:

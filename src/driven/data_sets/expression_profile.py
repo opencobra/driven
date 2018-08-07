@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-""" Contains class definition for gene/protein expression data storage."""
+
 # Copyright 2015 Novo Nordisk Foundation Center for Biosustainability, DTU.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+"""Define a general gene or protein expression data store."""
+
 from __future__ import absolute_import
 
 from itertools import combinations
@@ -20,8 +23,11 @@ from itertools import combinations
 import altair as alt
 import numpy as np
 import pandas as pd
-from optlang.symbolics import Add, Mul, Symbol
+from sympy import Min, Max, Add, Mul, Symbol
 from sympy.parsing.ast_parser import parse_expr
+
+from driven.utils import get_common_start
+
 
 class ExpressionProfile(object):
     """

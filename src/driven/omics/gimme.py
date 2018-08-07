@@ -15,11 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Implement GIMME."""
+"""Implement the GIMME method."""
 
 from __future__ import absolute_import
 
-import cobra
 from optlang.symbolics import Zero
 from six import iteritems
 
@@ -30,7 +29,7 @@ __all__ = ("gimme",)
 def gimme(model, expression_profile, cutoff, fraction_of_optimum=0.9,
           condition=0):
     """
-    Gene Inactivity Moderated by Metabolism and Expression (GIMME) [1]_.
+    Apply 'Gene Inactivity Moderated by Metabolism and Expression' (GIMME) [1]_.
 
     Parameters
     ----------
@@ -53,10 +52,11 @@ def gimme(model, expression_profile, cutoff, fraction_of_optimum=0.9,
 
     References
     ----------
-    .. [1] Becker, S. a and Palsson, B. O. (2008).
+    .. [1] Becker, S. and Palsson, B. O. (2008).
            Context-specific metabolic networks are consistent with experiments.
            PLoS Computational Biology, 4(5), e1000082.
            doi:10.1371/journal.pcbi.1000082
+
     """
     with model:
         solution = model.slim_optimize()
