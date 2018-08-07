@@ -31,11 +31,11 @@ from driven.utils import get_common_start
 
 class ExpressionProfile(object):
     """
-    Representation of an Expression profile. It can be RNA-Seq, Proteomics,
-    TNSeq or any other profile that links genes/proteins to a value
-    (continuous or discrete).
+    Representation of an expression profile.
 
-    It is the storage of single or multiple conditions as well as p-values.
+    It can be RNA-Seq, Proteomics, TNSeq or any other profile that
+    links genes/proteins to a value (continuous or discrete). It is
+    the storage of single or multiple conditions as well as p-values.
 
     Attributes
     ----------
@@ -49,13 +49,31 @@ class ExpressionProfile(object):
         no. of conditions as the columns.
     p_values: numpy.ndarray
         The p-values between conditions.
+
     """
+
     def __init__(self, identifiers, conditions, expression, p_values=None):
+        """
+        Instantiate a new ExpressionProfile.
+
+        Parameters
+        ----------
+        identifiers: list or array-like
+            Genes/Proteins for the dataset.
+        conditions: list or array-like
+            Conditions for the dataset.
+        expression: numpy.ndarray
+            Expression data being used.
+        p_values: numpy.ndarray, optional (default None)
+            p-values obtained from the expresion data.
+
+        """
         array_error = "Not an array-like structure."
         dimension_error = "Expression data and label dimensions don't match."
         assert isinstance(identifiers, (list, np.ndarray)), array_error
         assert isinstance(conditions, (list, np.ndarray)), array_error
         assert isinstance(expression, np.ndarray), array_error
+        assert isinstance(p_values, (type(None), np.ndarray)), array_error
         dimension = (len(identifiers), len(conditions))
         if len(identifiers) == 1:
             assert expression.shape[0] == len(conditions)
@@ -72,6 +90,14 @@ class ExpressionProfile(object):
         self._p_values = p_values
 
     def __getitem__(self, item):
+        """
+        Index the ExpressionProfile.
+
+        Parameters
+        ----------
+        item: [str, str] or [int, int] or [slice, slice]
+
+        """
         attribute_error = ("Non-supported indexing method. "
                            "Use profile['gene', 'condition'] "
                            "or profile[1, 2].")
@@ -91,6 +117,15 @@ class ExpressionProfile(object):
         return self.expression[i, j]
 
     def __eq__(self, other):
+        """
+        Check equality of two ExpressionProfiles.
+
+        Parameters
+        ----------
+        other: ExpressionProfile or other object
+            The object to check equality against.
+
+        """
         if not isinstance(other, ExpressionProfile):
             return False
         else:
@@ -108,7 +143,7 @@ class ExpressionProfile(object):
     @classmethod
     def from_data_frame(cls, data_frame):
         """
-        Reads expression data from a pandas DataFrame.
+        Read expression data from a pandas.DataFrame.
 
         Parameters
         ----------
@@ -121,6 +156,7 @@ class ExpressionProfile(object):
         Returns
         -------
         ExpressionProfile
+
         """
         columns = data_frame.columns.tolist()
         conditions = [c for c in columns if "p-value" not in c]
@@ -137,7 +173,7 @@ class ExpressionProfile(object):
     @classmethod
     def from_csv(cls, file_path, replicates=None, **kwargs):
         """
-        Reads expression data from a comma separated values (csv) file.
+        Read expression data from a comma separated values (csv) file.
 
         Parameters
         ----------
@@ -149,12 +185,13 @@ class ExpressionProfile(object):
         Returns
         -------
         ExpressionProfile
+
         """
         data = pd.read_csv(file_path, **kwargs)
         if replicates:
             columns = data.columns
             data = pd.DataFrame([data[columns[i:i+replicates]].median(axis=1)
-                                for i in range(0, len(columns), replicates)]
+                                 for i in range(0, len(columns), replicates)]
                                 ).transpose()
             data.columns = [get_common_start(*columns[i:i+replicates].tolist())
                             for i in range(0, len(columns), replicates)]
@@ -163,11 +200,12 @@ class ExpressionProfile(object):
     @property
     def data_frame(self):
         """
-        Builds a pandas DataFrame from the ExpressionProfile.
+        Build a pandas.DataFrame from the ExpressionProfile.
 
         Returns
         -------
         pandas.DataFrame
+
         """
         if self._p_values is None:
             expression = self.expression
@@ -184,12 +222,12 @@ class ExpressionProfile(object):
     @property
     def p_value_columns(self):
         """
-        Generates the p-value column names.
-        The p-values are between conditions.
+        Generate the p-value column names.
 
         Returns
         -------
         list
+
         """
         return ["{} {} p-value".format(c[0], c[1])
                 for c in combinations(self.conditions, 2)]
@@ -197,8 +235,7 @@ class ExpressionProfile(object):
     @property
     def p_values(self):
         """
-        Returns the p-values between the conditions
-        defined for the identifiers.
+        Return the p-values between the conditions.
 
         Returns
         -------
@@ -207,6 +244,7 @@ class ExpressionProfile(object):
         Raises
         ------
         ValueError
+
         """
         if not self._p_values.all():
             raise ValueError("No p-values defined.")
@@ -215,6 +253,14 @@ class ExpressionProfile(object):
 
     @p_values.setter
     def p_values(self, p_values):
+        """
+        Set p_values.
+
+        Parameters
+        ----------
+        p_values: numpy.ndarray
+
+        """
         assert isinstance(p_values, (np.ndarray, type(None)))
         if p_values is not None:
             if p_values.shape[1] != len(self.p_value_columns):
@@ -225,11 +271,12 @@ class ExpressionProfile(object):
 
     @p_values.deleter
     def p_values(self):
+        """Delete p_values."""
         self._p_values = None
 
     def differences(self, p_value=0.005):
         """
-        Calculates the differences based on the MADE method.
+        Calculate the differences based on the MADE method.
 
         Parameters
         ----------
@@ -239,14 +286,15 @@ class ExpressionProfile(object):
         Returns
         -------
         dict
+
         """
         diff = {}
         for idx, iden in enumerate(self.identifiers):
             diff[iden] = []
             for i in range(1, len(self.conditions)):
                 start, end = self.expression[idx, i-1: i+1]
-                p = self.p_values[idx, i-1]
-                if p <= p_value:
+                p_val = self.p_values[idx, i-1]
+                if p_val <= p_value:
                     if start < end:
                         diff[iden].append(+1)
                     elif start > end:
@@ -259,7 +307,7 @@ class ExpressionProfile(object):
 
     def _map_gene_to_rxn(self, reaction, gene_values, by):
         """
-        Maps gene data to reactions (using GPR associations).
+        Map gene data to reactions (using GPR associations).
 
         Parameters
         ----------
@@ -279,6 +327,7 @@ class ExpressionProfile(object):
         Returns
         -------
         float
+
         """
         local_dict = {gene.id: Symbol(gene.id) for gene in reaction.genes}
         rule = reaction.gene_reaction_rule.replace("and", "*").replace("or",
@@ -292,17 +341,17 @@ class ExpressionProfile(object):
 
     def to_dict(self, condition):
         """
-        Builds a dict with identifiers as keys and the expression values for
-        the selected condition as values.
+        Build a dict with identifiers and the expression for the condition.
 
         Parameters
         ----------
         condition: str or int
-            The condition or the column index.
+            The condition label or the column index.
 
         Returns
         -------
         dict
+
         """
         if isinstance(condition, int):
             index = condition
@@ -313,11 +362,12 @@ class ExpressionProfile(object):
 
     def to_reaction_dict(self, condition, model, **kwargs):
         """
-        Builds a dict with reaction as keys and the expression values for the
-        selected condition as values. If identifiers in the profile are genes,
-        GPR associations are respected. If the gene expression data is missing
-        in the profile, the reaction(s) related to that gene, is(are) supplied
-        with the cutoff value.
+        Build a dict with reactions and the expression for the condition.
+
+        If identifiers in the profile are genes, GPR associations are
+        respected. If the gene expression data is missing in the profile,
+        the reaction(s) related to that gene, is(are) supplied with the cutoff
+        value.
 
         Parameters
         ----------
@@ -334,6 +384,7 @@ class ExpressionProfile(object):
         Returns
         -------
         dict
+
         """
         cutoff = 0.0
         map_by = "or2max_and2min"
@@ -350,11 +401,12 @@ class ExpressionProfile(object):
 
     def hist(self, **kwargs):
         """
-        Plots an intensity histogram of the expression data.
+        Plot an intensity histogram of the expression data.
 
         Returns
         -------
         altair.Chart
+
         """
         df = self.data_frame.melt()
         hist = alt.Chart(df, title="Histogram of expression values", width=400,
@@ -370,7 +422,7 @@ class ExpressionProfile(object):
 
     def scatter(self, x, y, **kwargs):
         """
-        Generates a scatter plot for comparison between two conditions.
+        Generate a scatter plot for comparison between two conditions.
 
         Parameters
         ----------
@@ -386,6 +438,7 @@ class ExpressionProfile(object):
         Raises
         ------
         AssertionError
+
         """
         if len(self.conditions) == 1:
             raise AssertionError("Cannot build a scatter plot with only one \
@@ -409,11 +462,12 @@ class ExpressionProfile(object):
 
     def heatmap(self, **kwargs):
         """
-        Generates a heatmap from the expression profile.
+        Generate a heatmap from the expression profile.
 
         Returns
         -------
         altair.Chart
+
         """
         df = self.data_frame.reset_index().melt(id_vars='index',
                                                 var_name='x')
@@ -426,11 +480,12 @@ class ExpressionProfile(object):
 
     def box(self, **kwargs):
         """
-        Generates a box plot for comparison between conditions.
+        Generate a box plot for comparison between conditions.
 
         Returns
         -------
         altair.Chart
+
         """
         df = self.data_frame.melt()
         lower_box = 'q1(value):Q'
@@ -467,8 +522,7 @@ class ExpressionProfile(object):
 
     def minmax(self, condition=None):
         """
-        Returns the minimum and maximum values for the
-        specified condition.
+        Return the min and max values for the specified condition.
 
         Parameters
         ----------
@@ -478,6 +532,7 @@ class ExpressionProfile(object):
         Returns
         -------
         tuple of (min, max)
+
         """
         if condition is None:
             values = self[:, :]
