@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Contains function to perform GIM3E"""
+"""Implement the GIM3E method."""
 
 from __future__ import absolute_import
 
@@ -29,7 +29,10 @@ from driven.data_sets import ExpressionProfile
 def gim3e(model, expression_profile, metabolite_profile, media,
           optimum_fraction=0.9, penalty_fraction=1.01, condition=0):
     """
-    Gene Inactivation Moderated by Metabolism, Metabolomics and Expression[1]
+    Apply GIM3E [1]_ to a metabolic model.
+
+    GIM3E stands for 'Gene Inactivation Moderated by Metabolism, Metabolomics
+    and Expression'.
 
     Parameters
     ----------
@@ -63,6 +66,7 @@ def gim3e(model, expression_profile, metabolite_profile, media,
            from metabolomics and expression data, Bioinformatics, Volume 29,
            Issue 22, 15 November 2013, Pages 2900–2908,
            https://doi.org/10.1093/bioinformatics/btt493
+
     """
     assert isinstance(model, cobra.Model)
     assert isinstance(expression_profile, ExpressionProfile)
