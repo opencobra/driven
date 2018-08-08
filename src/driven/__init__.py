@@ -24,8 +24,11 @@ from __future__ import absolute_import
 __author__ = 'Novo Nordisk Foundation Center for Biosustainability, ' \
              'Technical University Denmark'
 __email__ = 'niso@biosustain.dtu.dk'
+
 from ._version import get_versions
 __version__ = get_versions()['version']
 del get_versions
 
+from driven.data_sets import *
+from driven.omics import *
 from driven.utils import *
