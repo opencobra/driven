@@ -118,11 +118,11 @@ class FluxConstraints(object):
         if data_type == "measurement":
             limits = data_frame.apply(lambda x: [x["value"] - x["deviation"],
                                                  x["value"] + x["deviation"]],
-                                      axis=1).values
+                                      axis=1, result_type="broadcast").values
         elif data_type == "constraints":
             limits = data_frame.apply(lambda x: [x["lower_limit"],
                                                  x["upper_limit"]],
-                                      axis=1).values
+                                      axis=1, result_type="broadcast").values
         else:
             raise ValueError("Invalid input type {}".format(data_type))
 
