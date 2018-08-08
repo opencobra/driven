@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Implement the integrative metabolic analysis tool."""
+"""Implement the iMAT tool."""
 
 from __future__ import absolute_import
 
@@ -27,8 +27,16 @@ __all__ = ("imat",)
 
 
 def imat(model, expression_profile, cutoff, epsilon=1, condition=0):
-    """
-    Integrative Metabolic Analysis Tool [1]_.
+    r"""
+    Apply iMAT [1]_ to obtain context-specific metabolic network.
+
+    Integrate Metabolic Analysis Tool (iMAT) does not assume that an
+    objective is to be achieved by the cell, thus allowing generation
+    of context-specific models of mammalian tissues (does not have a
+    trivial objective function) as well. The core concept of iMAT is
+    to maximize the number of matches between reaction states (i.e.,
+    active or inactive) and corresponding data states (i.e.,
+    expressed or not expressed).
 
     Parameters
     ----------
@@ -48,6 +56,19 @@ def imat(model, expression_profile, cutoff, epsilon=1, condition=0):
     -------
     context-specific model: cobra.Model
     solution: cobra.Solution
+
+    Notes
+    -----
+    The MILP formulation for iMAT is:
+
+    maximize: (\sum_{i\in R_H} (y_i^+ + y_i^-) + \sum_{i\in R_L} (y_i^+))
+    s.t.    : Sv = 0
+              v_min <= v <= v_max
+              v_i + y_i^+ (v_{min,i} - \epsilon) >= v_{min,i}, i \in R_H
+              v_i + y_i^- (v_{max,i} + \epsilon) <= v_{max,i}, i \in R_H
+              v_{min,i}(1 - y_i^+) <= v_i <= v_{max,i}(1 - y_i^+), i \in R_L
+              v \in R^m
+              y_i^+ , y_i^- \in [0, 1]
 
     References
     ----------

@@ -28,8 +28,22 @@ __all__ = ("gimme",)
 
 def gimme(model, expression_profile, cutoff, fraction_of_optimum=0.9,
           condition=0):
-    """
-    Apply 'Gene Inactivity Moderated by Metabolism and Expression' (GIMME) [1]_.
+    r"""
+    Apply GIMME [1]_ to obtain context-specific metabolic network.
+
+    Gene Inactivity Moderated by Metabolism and Expression (GIMME) requires
+    RMF (Required Metabolic Functionalities) like biomass growth, to be set
+    before it is used. RMF is set using cobra.Model.Objective. The basic
+    idea of GIMME is to generate a metabolic network by performing the
+    following steps:
+    First, the maximum possible flux through RMF is calculated and
+    constrained to operate at or above the value defined by
+    fraction_of_optimum.
+    Second, the flux of reactions are penalized based on the difference of
+    cutoff and the expressed value.
+    Finally, the solution of the previous step is minimized to obtain an
+    Inconsistency Score (IS). This score determines the realtion between
+    the expression data and the model provided.
 
     Parameters
     ----------
@@ -49,6 +63,16 @@ def gimme(model, expression_profile, cutoff, fraction_of_optimum=0.9,
     -------
     context-specific model: cobra.Model
     solution: cobra.Solution
+
+    Notes
+    -----
+    The formulation for obtaining the Inconsistency Score is given below:
+
+    minimize: \sum c_i * |v_i|
+    s.t.    : Sv = 0
+              a_i <= v_i <= b_i
+    where   : c_i = {x_cutoff - x_i where x_cutoff > x_i
+                     0 otherwise} for all i
 
     References
     ----------
