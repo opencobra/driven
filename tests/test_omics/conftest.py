@@ -90,3 +90,45 @@ def toy_expression_data():
     conditions = ["Exp#1", "Exp#2", "Exp#3"]
 
     return ExpressionProfile(genes, conditions, expression)
+
+
+@pytest.fixture(scope="session")
+def toy_model_fastcore():
+    """
+    Build a toy model for testing FASTCC and FASTCORE from
+    reference [1]_.
+
+    References
+    ----------
+    .. [1] Vlassis N, Pacheco MP, Sauter T (2014)
+           Fast Reconstruction of Compact Context-Specific Metabolic Network
+           Models.
+           PLoS Comput Biol 10(1): e1003424. doi:10.1371/journal.pcbi.1003424
+
+    """
+    model = cobra.Model("FASTCORE")
+    r_1 = cobra.Reaction("r1")
+    r_2 = cobra.Reaction("r2")
+    r_3 = cobra.Reaction("r3")
+    r_4 = cobra.Reaction("r4")
+    r_5 = cobra.Reaction("r5")
+    r_6 = cobra.Reaction("r6")
+
+    model.add_reactions([r_1, r_2, r_3, r_4, r_5, r_6])
+
+    r_1.reaction = "-> 2 A"
+    r_2.reaction = "A <-> B"
+    r_3.reaction = "A -> D"
+    r_4.reaction = "A -> C"
+    r_5.reaction = "C -> D"
+    r_6.reaction = "D ->"
+
+    r_1.bounds = (0.0, 3.0)
+    r_2.bounds = (-3.0, 3.0)
+    r_3.bounds = (0.0, 3.0)
+    r_4.bounds = (0.0, 3.0)
+    r_5.bounds = (0.0, 3.0)
+    r_6.bounds = (0.0, 3.0)
+
+    model.objective = r_6
+    return model
