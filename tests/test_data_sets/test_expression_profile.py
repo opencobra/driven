@@ -55,9 +55,9 @@ def test_from_data_frame(mock_expression_profile):
     assert mock_expression_profile == converted_data_frame
 
 
-def test_from_csv(mock_expression_profile):
+def test_from_csv(mock_expression_profile, expression_profile_csv):
     """Test import from CSV file."""
-    csv_data = ExpressionProfile.from_csv("test_expression_profile.csv",
+    csv_data = ExpressionProfile.from_csv(expression_profile_csv,
                                           index_col=0)
     assert mock_expression_profile == csv_data
 
