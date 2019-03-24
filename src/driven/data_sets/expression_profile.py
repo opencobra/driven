@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 
 # Copyright 2015 Novo Nordisk Foundation Center for Biosustainability, DTU.
 
@@ -19,14 +19,32 @@
 from __future__ import absolute_import
 
 from itertools import combinations
+from ast import And, Or, NodeTransformer
 
 import altair as alt
 import numpy as np
 import pandas as pd
 from sympy import Min, Max, Add, Mul, Symbol
-from sympy.parsing.ast_parser import parse_expr
-
+from cobra.core.gene import parse_gpr
 from driven.utils import get_common_start
+
+
+class Transform(NodeTransformer):
+
+    def visit_Name(self, node):
+        return Symbol(node.id)
+    def visit_BoolOp(self, node):
+        values = [self.visit(v) for v in node.values]
+        if isinstance(node.op, And):
+            return Mul(*values)
+        if isinstance(node.op, Or):
+            return Add(*values)
+        return node
+
+def parse_expr(s):
+    a, genes = parse_gpr(s.strip())
+    a = Transform().visit(a)
+    return a.body
 
 
 class ExpressionProfile(object):
@@ -329,10 +347,8 @@ class ExpressionProfile(object):
         float
 
         """
-        local_dict = {gene.id: Symbol(gene.id) for gene in reaction.genes}
-        rule = reaction.gene_reaction_rule.replace("and", "*").replace("or",
-                                                                       "+")
-        expression = parse_expr(rule, local_dict)
+        rule = reaction.gene_reaction_rule
+        expression = parse_expr(rule)
         if by == "or2max_and2min":
             expression = expression.replace(Mul, Min).replace(Add, Max)
         elif by == "or2sum_and2min":
