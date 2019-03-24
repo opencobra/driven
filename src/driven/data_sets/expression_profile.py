@@ -353,7 +353,7 @@ class ExpressionProfile(object):
             expression = expression.replace(Mul, Min).replace(Add, Max)
         elif by == "or2sum_and2min":
             expression = expression.replace(Mul, Min)
-        return expression.subs(gene_values).evalf()
+        return float(expression.subs(gene_values).evalf())
 
     def to_dict(self, condition):
         """
