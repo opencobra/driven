@@ -30,6 +30,12 @@ from driven.utils import get_common_start
 
 
 class Transform(NodeTransformer):
+    """
+    Transform a python ast syntax tree to a sympy one.
+
+    The output of `cobra.core.gene.parse_gpr` is an extremely limited 
+    syntax tree so we don't need to do much.
+    """
 
     def visit_Name(self, node):
         return Symbol(node.id)
@@ -41,8 +47,21 @@ class Transform(NodeTransformer):
             return Add(*values)
         return node
 
-def parse_expr(s):
-    a, genes = parse_gpr(s.strip())
+def parse_expr(gene_reaction_rule):
+    """
+    Takes a gene_reaction_rule and converts it to a sympy expression.
+
+    Parameters
+    ----------
+        gene_reaction_rule: string
+            model reaction rule
+
+    Returns
+    -------
+        Tuple[sympy.Expr, Set[str]]: 
+            sympy expression, set of gene identifiers found
+    """
+    a, genes = parse_gpr(gene_reaction_rule.strip())
     a = Transform().visit(a)
     return a.body, genes
 
