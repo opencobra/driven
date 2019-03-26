@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 
 # Copyright 2015 Novo Nordisk Foundation Center for Biosustainability, DTU.
 
@@ -19,14 +19,51 @@
 from __future__ import absolute_import
 
 from itertools import combinations
+from ast import And, Or, NodeTransformer
 
 import altair as alt
 import numpy as np
 import pandas as pd
 from sympy import Min, Max, Add, Mul, Symbol
-from sympy.parsing.ast_parser import parse_expr
-
+from cobra.core.gene import parse_gpr
 from driven.utils import get_common_start
+
+
+class Transform(NodeTransformer):
+    """
+    Transform a python ast syntax tree to a sympy one.
+
+    The output of `cobra.core.gene.parse_gpr` is an extremely limited 
+    syntax tree so we don't need to do much.
+    """
+
+    def visit_Name(self, node):
+        return Symbol(node.id)
+    def visit_BoolOp(self, node):
+        values = [self.visit(v) for v in node.values]
+        if isinstance(node.op, And):
+            return Mul(*values)
+        if isinstance(node.op, Or):
+            return Add(*values)
+        return node
+
+def parse_expr(gene_reaction_rule):
+    """
+    Takes a gene_reaction_rule and converts it to a sympy expression.
+
+    Parameters
+    ----------
+        gene_reaction_rule: string
+            model reaction rule
+
+    Returns
+    -------
+        Tuple[sympy.Expr, Set[str]]: 
+            sympy expression, set of gene identifiers found
+    """
+    a, genes = parse_gpr(gene_reaction_rule.strip())
+    a = Transform().visit(a)
+    return a.body, genes
 
 
 class ExpressionProfile(object):
@@ -329,15 +366,16 @@ class ExpressionProfile(object):
         float
 
         """
-        local_dict = {gene.id: Symbol(gene.id) for gene in reaction.genes}
-        rule = reaction.gene_reaction_rule.replace("and", "*").replace("or",
-                                                                       "+")
-        expression = parse_expr(rule, local_dict)
+        rule = reaction.gene_reaction_rule
+        expression, genes = parse_expr(rule)
+        missing = genes - set(gene_values)
+        if missing:
+            raise ValueError("missing values for genes {}".format(missing))
         if by == "or2max_and2min":
             expression = expression.replace(Mul, Min).replace(Add, Max)
         elif by == "or2sum_and2min":
             expression = expression.replace(Mul, Min)
-        return expression.subs(gene_values).evalf()
+        return float(expression.subs(gene_values).evalf())
 
     def to_dict(self, condition):
         """
