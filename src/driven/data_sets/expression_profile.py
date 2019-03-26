@@ -44,7 +44,7 @@ class Transform(NodeTransformer):
 def parse_expr(s):
     a, genes = parse_gpr(s.strip())
     a = Transform().visit(a)
-    return a.body
+    return a.body, genes
 
 
 class ExpressionProfile(object):
@@ -348,7 +348,10 @@ class ExpressionProfile(object):
 
         """
         rule = reaction.gene_reaction_rule
-        expression = parse_expr(rule)
+        expression, genes = parse_expr(rule)
+        missing = genes - set(gene_values)
+        if missing:
+            raise ValueError("missing values for genes {}".format(missing))
         if by == "or2max_and2min":
             expression = expression.replace(Mul, Min).replace(Add, Max)
         elif by == "or2sum_and2min":
