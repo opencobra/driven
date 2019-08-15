@@ -19,10 +19,10 @@
 
 from __future__ import absolute_import
 
+import pytest
 from cobra import Model, Reaction
 
 from driven.omics import fastcore
-import pytest
 
 
 @pytest.fixture(scope="module")
