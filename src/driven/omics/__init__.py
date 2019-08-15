@@ -19,6 +19,6 @@
 
 from __future__ import absolute_import
 
+from driven.omics.fastcore import fastcore
 from driven.omics.gimme import *
 from driven.omics.imat import *
-from driven.omics.fastcc import *
