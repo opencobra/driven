@@ -63,10 +63,11 @@ def toy_model_fastcore():
 
 def test_fastcore(toy_model_fastcore):
     """Test FASTCORE."""
-    expected_rxns = ['r1', 'r2', 'r4', 'r5']
+    expected_rxns = ['v1', 'v2', 'v4', 'v5']
     expected_mets = ['A', 'B', 'D']
 
-    fastcore_model = fastcore(toy_model_fastcore)
+    fastcore_model = fastcore(toy_model_fastcore,
+                              active_reactions=['v1', 'v4'])
     fastcore_rxns = [rxn.id for rxn in fastcore_model.reactions]
     fastcore_mets = [met.id for met in fastcore_model.metabolites]
 
