@@ -48,8 +48,10 @@ def test_from_data_frame(mock_flux_constraints):
                                         [5.1, 5.2]]),
                               index=["R1", "R2", "R3"],
                               columns=["lower_limit", "upper_limit"])
-    converted_data_frame = FluxConstraints.from_data_frame(data_frame,
-                                                           data_type="constraints")
+    converted_data_frame = FluxConstraints.from_data_frame(
+        data_frame,
+        data_type="constraints"
+    )
     del data_frame
     assert mock_flux_constraints == converted_data_frame
 

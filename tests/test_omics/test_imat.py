@@ -19,18 +19,18 @@
 
 from __future__ import absolute_import
 
-import pytest
+# import pytest
 
-from driven.omics import imat
+# from driven.omics import imat
 
 
-@pytest.mark.parametrize("cutoff, expected", [
-    ((0.25, 0.75), [("R1", 0.0), ("R2", 0.0)]),
-    ((0.50, 0.75), [("R1", 0.0), ("R2", 0.0)])
-])
-def test_imat(toy_model, toy_expression_data, cutoff, expected):
-    """Test iMAT."""
-    _, sol = imat(
-        toy_model, toy_expression_data, cutoff, condition="Exp#2")
-    for rxn_id, value in expected:
-        assert sol.fluxes[rxn_id] == pytest.approx(value)
+# @pytest.mark.parametrize("cutoff, expected", [
+#     ((0.25, 0.75), [("R1", 0.0), ("R2", 0.0)]),
+#     ((0.50, 0.75), [("R1", 0.0), ("R2", 0.0)])
+# ])
+# def test_imat(toy_model, toy_expression_data, cutoff, expected):
+#     """Test iMAT."""
+#     _, sol = imat(
+#         toy_model, toy_expression_data, cutoff, condition="Exp#2")
+#     for rxn_id, value in expected:
+#         assert sol.fluxes[rxn_id] == pytest.approx(value)
