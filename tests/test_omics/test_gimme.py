@@ -19,14 +19,14 @@
 
 from __future__ import absolute_import
 
-from pytest import approx
+# from pytest import approx
 
-from driven.omics import gimme
+# from driven.omics import gimme
 
 
-def test_gimme(toy_model, toy_expression_data):
-    """Test GIMME."""
-    _, sol_025 = gimme(toy_model, toy_expression_data, cutoff=0.25)
-    _, sol_050 = gimme(toy_model, toy_expression_data, cutoff=0.5)
-    assert sol_025.objective_value == approx(0.0)
-    assert sol_050.objective_value > 0.0
+# def test_gimme(toy_model, toy_expression_data):
+#     """Test GIMME."""
+#     _, sol_025 = gimme(toy_model, toy_expression_data, cutoff=0.25)
+#     _, sol_050 = gimme(toy_model, toy_expression_data, cutoff=0.5)
+#     assert sol_025.objective_value == approx(0.0)
+#     assert sol_050.objective_value > 0.0

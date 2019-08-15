@@ -19,11 +19,24 @@
 
 from __future__ import absolute_import
 
+from os.path import abspath, join
 import numpy as np
 import pytest
 
 from driven.data_sets import ExpressionProfile
 from driven.data_sets import FluxConstraints
+
+
+@pytest.fixture(scope="session")
+def expression_profile_csv():
+    """Return path of test file."""
+    return abspath(join(abspath(__file__), "..", "test_expression_profile.csv"))
+
+
+@pytest.fixture(scope="session")
+def flux_constraints_csv():
+    """Return path of test file."""
+    return abspath(join(abspath(__file__), "..", "test_flux_constraints.csv"))
 
 
 @pytest.fixture(scope="session")

@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+"""Define functions for variators."""
+
 # Copyright 2015 Novo Nordisk Foundation Center for Biosustainability, DTU.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,21 +23,27 @@ __all__ = ["zero_one_binary_variator", "zero_one_linear_variator"]
 
 
 def zero_one_binary_variator(random, candidates, args):
+    """Perform zero-one binary variation."""
     mutation_rate = args.get("mutation_rate", 0.15)
     new_candidates = [None for _ in candidates]
+
     for i, c in enumerate(candidates):
         new_candidate = [0 for _ in c]
         for j, v in enumerate(c):
-            new_candidate[j] = v if random.random() < mutation_rate else 1 if random.random() < 0.5 else 0
+            new_candidate[j] = v if random.random() < mutation_rate else 1 \
+                if random.random() < 0.5 else 0
         new_candidates[i] = new_candidate
 
     return new_candidates
 
 
 def zero_one_linear_variator(random, candidates, args):
+    """Perform zero-one linear variation."""
     mutation_rate = args.get("mutation_rate", 0.15)
     new_candidates = [None for _ in candidates]
+
     for i, c in enumerate(candidates):
-        new_candidates[i] = [v if random.random() < mutation_rate else random.random() for j, v in enumerate(c)]
+        new_candidates[i] = [v if random.random() < mutation_rate
+                             else random.random() for j, v in enumerate(c)]
 
     return new_candidates

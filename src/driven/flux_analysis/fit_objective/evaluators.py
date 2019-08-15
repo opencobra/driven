@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+
+"""Define functions for evaluating essential genes and reactions."""
+
 # Copyright 2015 Novo Nordisk Foundation Center for Biosustainability, DTU.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,41 +23,59 @@ from cobra.flux_analysis import find_essential_genes
 from optlang.symbolics import Add, Mul, Real
 
 
-__all__ = ["essential_genes_profile_evaluator", "essential_reactions_profile_evaluator"]
+__all__ = [
+    "essential_genes_profile_evaluator",
+    "essential_reactions_profile_evaluator"
+]
 
 
 def _essential_profile_assertion_score(actual, expected):
     score = 0
+
     for key in actual:
         exp = expected.get(key, False)
         if exp == actual[key]:
             score += 1
+
     return float(score)
 
 
-def essential_genes_profile_evaluator(model, coefficients, candidates, essential, use_reactions=True):
+def essential_genes_profile_evaluator(model, coefficients, candidates,
+                                      essential, use_reactions=True):
+    """Evaluate essential genes."""
     total = float(len(model.genes))
+
     with model:
         _set_objective(model, coefficients, candidates, use_reactions)
         predicted_essential = find_essential_genes(model)
         actual = {g.id: g in predicted_essential for g in model.genes}
-        return total - _essential_profile_assertion_score(actual, essential)
+
+    return total - _essential_profile_assertion_score(actual, essential)
 
 
-def essential_reactions_profile_evaluator(model, coefficients, candidates, essential, use_reactions=True):
+def essential_reactions_profile_evaluator(model, coefficients, candidates,
+                                          essential, use_reactions=True):
+    """Evaluate essential reactions."""
     total = float(len(model.reactions) - len(model.exchanges))
+
     with model:
         _set_objective(model, coefficients, candidates, use_reactions)
         predicted_essential = model.essential_reactions()
-        actual = {r.id: r in predicted_essential for r in model.reactions if r not in model.exchanges}
-        return total - _essential_profile_assertion_score(actual, essential)
+        actual = {r.id: r in predicted_essential
+                  for r in model.reactions if r not in model.exchanges}
+    return total - _essential_profile_assertion_score(actual, essential)
 
 
 def _set_objective(model, coefficients, candidates, use_reactions):
     if use_reactions:
-        obj = Add([Mul([Real(coeff), react.flux_expression]) for react, coeff in zip(candidates, coefficients)])
+        obj = Add([Mul([Real(coeff), react.flux_expression])
+                   for react, coeff in zip(candidates, coefficients)])
     else:
         obj = Reaction("make_metabolites")
-        obj.add_metabolites({met: coeff for met, coeff in zip(candidates, coefficients) if coeff != 0})
+        obj.add_metabolites(
+            {met: coeff for met, coeff in zip(candidates, coefficients)
+             if coeff != 0}
+        )
         model.add_reactions([obj])
+
     model.objective = obj

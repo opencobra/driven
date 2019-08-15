@@ -48,15 +48,17 @@ def test_from_data_frame(mock_flux_constraints):
                                         [5.1, 5.2]]),
                               index=["R1", "R2", "R3"],
                               columns=["lower_limit", "upper_limit"])
-    converted_data_frame = FluxConstraints.from_data_frame(data_frame,
-                                                           data_type="constraints")
+    converted_data_frame = FluxConstraints.from_data_frame(
+        data_frame,
+        data_type="constraints"
+    )
     del data_frame
     assert mock_flux_constraints == converted_data_frame
 
 
-def test_from_csv(mock_flux_constraints):
+def test_from_csv(mock_flux_constraints, flux_constraints_csv):
     """Test import from CSV file."""
-    csv_data = FluxConstraints.from_csv("test_flux_constraints.csv",
+    csv_data = FluxConstraints.from_csv(flux_constraints_csv,
                                         data_type="constraints",
                                         index_col=0)
     assert mock_flux_constraints == csv_data

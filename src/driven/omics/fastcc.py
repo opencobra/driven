@@ -64,7 +64,6 @@ def fastcc(model, flux_threshold=1.0, zero_cutoff=1e-9):
            PLoS Comput Biol 10(1): e1003424. doi:10.1371/journal.pcbi.1003424
 
     """
-
     with model:
         obj_vars = []
         vars_and_cons = []

@@ -28,14 +28,14 @@ from driven.data_sets.expression_profile import ExpressionProfile
 
 @pytest.fixture(scope="session")
 def toy_model():
-    """
-    Build a toy metabolic network model according to the reference [1]_.
+    """Build a toy metabolic network model according to the reference [1]_.
 
     References
     ----------
     .. [1] Blazier AS and Papin JA (2012) Integration of expression data in
            genome-scale metabolic network reconstructions.
            Front. Physio. 3:299. doi: 10.3389/fphys.2012.00299
+
     """
     model = cobra.Model("Blazier et al 2012")
     r_1 = cobra.Reaction("R1")
@@ -63,8 +63,8 @@ def toy_model():
     r_6.gene_reaction_rule = "Gene6"
     r_7.gene_reaction_rule = "Gene7"
 
-    EX_M1_e = model.add_boundary(model.metabolites.M1_e, lb=-10.0)
-    EX_M4_e = model.add_boundary(model.metabolites.M4_e, lb=-10.0)
+    model.add_boundary(model.metabolites.M1_e, lb=-10.0)
+    model.add_boundary(model.metabolites.M4_e, lb=-10.0)
 
     model.objective = r_4
     return model
@@ -72,14 +72,14 @@ def toy_model():
 
 @pytest.fixture(scope="session")
 def toy_expression_data():
-    """
-    Build a toy expression data set according to the reference [1]_.
+    """Build a toy expression data set according to the reference [1]_.
 
     References
     ----------
     .. [1] Blazier AS and Papin JA (2012) Integration of expression data in
            genome-scale metabolic network reconstructions.
            Front. Physio. 3:299. doi: 10.3389/fphys.2012.00299
+
     """
     expression = np.array(([0.17, 0.20, 0.93],
                            [0.36, 0.83, 0.77],
@@ -94,9 +94,7 @@ def toy_expression_data():
 
 @pytest.fixture(scope="session")
 def toy_model_fastcore():
-    """
-    Build a toy model for testing FASTCC and FASTCORE from
-    reference [1]_.
+    """Build a toy model for testing FASTCC and FASTCORE from reference [1]_.
 
     References
     ----------
